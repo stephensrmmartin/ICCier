@@ -10,7 +10,7 @@
 #' @param cor_structure 3-length vector describing the correlation matrix of random effects.
 #'
 #' @importFrom mvtnorm rmvnorm
-#' @import Matrix
+#' @importFrom Matrix forceSymmetric
 #'
 #' @return
 #'
@@ -70,4 +70,26 @@ datagen <- function(n,K,beta,gamma,eta,cor_structure){
   data <- list(n=n,K=K,N=N,P=P,P_l2=Q,P_l1=P_random,Q_random=Q_random,y=y,x_loc_l2=X_loc_l2,x_sca_l2=X_sca_l2,x_loc_l1=X_loc_l1,x_sca_l1=X_sca_l1,group=group)
   list(params=params,meta=meta,data=data)
 
+}
+
+#' Generate data frame for testing.
+#'
+#' Uses same as \code{\link{datagen}}, but outputs a data frame.
+#'
+#' @param n n
+#' @param K K
+#' @param beta beta
+#' @param gamma gamma
+#' @param eta eta
+#' @param cor_structure cor_structure
+#'
+#' @return
+#'
+generate_df <- function(n,K,beta,gamma,eta,cor_structure){
+  d <- datagen(n,K,beta,gamma,eta,cor_structure)
+  ds <- data.frame(y=d$data$y,x_L1=d$data$x_sca_l1,group=d$data$group)
+  for(n in 1:d$data$K){
+    ds[ds$group == n,paste0('x_L2.',1:(d$meta$Q - 1))] <- d$data$x_sca_l2[n,-1]
+  }
+  return(ds)
 }
