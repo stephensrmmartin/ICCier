@@ -9,6 +9,9 @@
 #' @param eta Qx(Q_random+1) matrix representing the effects of Q level 2 variables on the mean variance and Q_random level 1 scale variances.
 #' @param cor_structure 3-length vector describing the correlation matrix of random effects.
 #'
+#' @importFrom mvtnorm rmvnorm
+#' @import Matrix
+#'
 #' @return
 #'
 datagen <- function(n,K,beta,gamma,eta,cor_structure){
