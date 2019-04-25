@@ -14,6 +14,10 @@ summary.ICCier <- function(object,prob=.95,...){
 
 }
 
+print.ICCier <- function(object,...){
+
+}
+
 .get_beta <- function(object,prob=.95,...){
 
 }
