@@ -11,10 +11,22 @@
 #' @export
 #'
 summary.ICCier <- function(object,prob=.95,...){
+  beta <- .get_beta(object,prob,...)
+  gamma <- .get_gamma(object,prob,...)
+  eta <- .get_eta(object,prob,...)
 
+  class(out) <- 'summary.ICCier'
 }
 
 print.ICCier <- function(object,...){
+
+}
+
+print.summary.ICCier <- function(object_summary){
+
+}
+
+.diag_rhat <- function(object){
 
 }
 
@@ -31,10 +43,12 @@ print.ICCier <- function(object,...){
   mu_group.L <- matrix(mu_group.ci[,1],nrow=K)
   mu_group.U <- matrix(mu_group.ci[,2],nrow=K)
 
-  return(mget(c('mu','mu_group','mu.L','mu.U','mu_group.L','mu_group.U')))
+  return(mget(c('mu','mu.L','mu.U','mu_group','mu_group.L','mu_group.U')))
 }
 
 .get_gamma <- function(object,prob=.95,...){
+  fnames <- .get_formula_names(object)
+
   gamma <- .posterior_mean(object, 'gamma')
   gamma_group <- .posterior_mean(object, 'gamma_group')
   gamma.ci <- posterior_interval(object, prob=prob, pars = 'gamma')
@@ -51,10 +65,22 @@ print.ICCier <- function(object,...){
   gamma_group.L <- matrix(gamma_group.ci[,1],nrow=K)
   gamma_group.U <- matrix(gamma_group.ci[,2],nrow=K)
 
-  return(mget(c('gamma','gamma_group','gamma.L','gamma.U','gamma_group.L','gamma_group.U')))
+  rownames(gamma) <- fnames$l2
+  colnames(gamma) <- fnames$l1
+  rownames(gamma.L) <- fnames$l2
+  colnames(gamma.L) <- fnames$l1
+  rownames(gamma.U) <- fnames$l2
+  colnames(gamma.U) <- fnames$l1
+
+  colnames(gamma_group) <- fnames$l1
+  colnames(gamma_group.L) <- fnames$l1
+  colnames(gamma_group.U) <- fnames$l1
+
+  return(mget(c('gamma','gamma.L','gamma.U','gamma_group','gamma_group.L','gamma_group.U')))
 }
 
 .get_eta <- function(object,prob=.95,...){
+  fnames <- .get_formula_names(object)
   eta <- .posterior_mean(object, 'eta')
   eta.ci <- posterior_interval(object,prob=prob,pars = 'eta')
 
@@ -63,6 +89,13 @@ print.ICCier <- function(object,...){
   eta <- matrix(eta, nrow = P_l2)
   eta.L <- matrix(eta.ci[,1],nrow=P_l2)
   eta.U <- matrix(eta.ci[,2],nrow=P_l2)
+
+  rownames(eta) <- fnames$l2
+  colnames(eta) <- c('(Intercept.L)',fnames$l1)
+  rownames(eta.L) <- fnames$l2
+  colnames(eta.L) <- c('(Intercept.L)',fnames$l1)
+  rownames(eta.U) <- fnames$l2
+  colnames(eta.U) <- c('(Intercept.L)',fnames$l1)
 
   return(mget(c('eta','eta.L','eta.U')))
 }
@@ -75,4 +108,12 @@ print.ICCier <- function(object,...){
 .posterior_sd <- function(object,pars){
   samps <- as.matrix(object$fit,pars)
   apply(samps,2,sd)
+}
+
+.get_formula_names <- function(object){
+  l1 <- colnames(object$stan_data$x_sca_l1)
+  l2 <- colnames(object$stan_data$x_sca_l2)
+  outcome <- colnames(model.part(object$formula,object$data,lhs=1))
+  grouping <- colnames(model.part(object$formula,object$data,lhs=2))
+  return(mget(c('l1','l2','outcome','grouping')))
 }
