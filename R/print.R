@@ -15,14 +15,18 @@ summary.ICCier <- function(object,prob=.95,...){
   gamma <- .get_gamma(object,prob,...)
   eta <- .get_eta(object,prob,...)
 
+  out <- 'filler'
   class(out) <- 'summary.ICCier'
+  out
 }
 
 print.ICCier <- function(object,...){
+  cat('test print.ICCier\n')
 
 }
 
 print.summary.ICCier <- function(object_summary){
+  cat('test print.summary.ICCier\n')
 
 }
 
@@ -43,7 +47,9 @@ print.summary.ICCier <- function(object_summary){
   mu_group.L <- matrix(mu_group.ci[,1],nrow=K)
   mu_group.U <- matrix(mu_group.ci[,2],nrow=K)
 
-  return(mget(c('mu','mu.L','mu.U','mu_group','mu_group.L','mu_group.U')))
+  out <- mget(c('mu','mu.L','mu.U','mu_group','mu_group.L','mu_group.U'))
+
+  return(out)
 }
 
 .get_gamma <- function(object,prob=.95,...){
@@ -70,7 +76,9 @@ print.summary.ICCier <- function(object_summary){
 
   colnames(gamma_group) <- colnames(gamma_group.L) <- colnames(gamma_group.U) <- fnames$l1
 
-  return(mget(c('gamma','gamma.L','gamma.U','gamma_group','gamma_group.L','gamma_group.U')))
+  out <- mget(c('gamma','gamma.L','gamma.U','gamma_group','gamma_group.L','gamma_group.U'))
+
+  return(out)
 }
 
 .get_eta <- function(object,prob=.95,...){
@@ -87,7 +95,9 @@ print.summary.ICCier <- function(object_summary){
   rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$l2
   colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c('(Intercept.L)',fnames$l1)
 
-  return(mget(c('eta','eta.L','eta.U')))
+  out <- mget(c('eta','eta.L','eta.U'))
+
+  return(out)
 }
 
 .posterior_mean <- function(object,pars){
