@@ -65,16 +65,10 @@ print.summary.ICCier <- function(object_summary){
   gamma_group.L <- matrix(gamma_group.ci[,1],nrow=K)
   gamma_group.U <- matrix(gamma_group.ci[,2],nrow=K)
 
-  rownames(gamma) <- fnames$l2
-  colnames(gamma) <- fnames$l1
-  rownames(gamma.L) <- fnames$l2
-  colnames(gamma.L) <- fnames$l1
-  rownames(gamma.U) <- fnames$l2
-  colnames(gamma.U) <- fnames$l1
+  rownames(gamma) <- rownames(gamma.L) <- rownames(gamma.U) <- fnames$l2
+  colnames(gamma) <- colnames(gamma.L) <- colnames(gamma.U) <- fnames$l1
 
-  colnames(gamma_group) <- fnames$l1
-  colnames(gamma_group.L) <- fnames$l1
-  colnames(gamma_group.U) <- fnames$l1
+  colnames(gamma_group) <- colnames(gamma_group.L) <- colnames(gamma_group.U) <- fnames$l1
 
   return(mget(c('gamma','gamma.L','gamma.U','gamma_group','gamma_group.L','gamma_group.U')))
 }
@@ -90,12 +84,8 @@ print.summary.ICCier <- function(object_summary){
   eta.L <- matrix(eta.ci[,1],nrow=P_l2)
   eta.U <- matrix(eta.ci[,2],nrow=P_l2)
 
-  rownames(eta) <- fnames$l2
-  colnames(eta) <- c('(Intercept.L)',fnames$l1)
-  rownames(eta.L) <- fnames$l2
-  colnames(eta.L) <- c('(Intercept.L)',fnames$l1)
-  rownames(eta.U) <- fnames$l2
-  colnames(eta.U) <- c('(Intercept.L)',fnames$l1)
+  rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$l2
+  colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c('(Intercept.L)',fnames$l1)
 
   return(mget(c('eta','eta.L','eta.U')))
 }
