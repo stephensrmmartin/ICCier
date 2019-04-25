@@ -39,6 +39,7 @@ summary.ICCier <- function(object,prob=.95,...){
 #' @param ... Not used.
 #'
 #' @return Matrix with two columns (lower and upper) and one parameter per row.
+#' @export
 #'
 #' @keywords internal
 posterior_interval.ICCier <- function(object, prob = .95, pars, ...){
@@ -56,6 +57,7 @@ posterior_interval.ICCier <- function(object, prob = .95, pars, ...){
 #' @param ... Not used.
 #'
 #' @return S by N matrix of log likelihoods.
+#' @export
 #'
 #' @keywords internal
 log_lik.ICCier <- function(object,...){
@@ -69,6 +71,7 @@ log_lik.ICCier <- function(object,...){
 #' @param ... Not used.
 #'
 #' @return Real value. Number of posterior samples stored (post-warmup).
+#' @export
 #' @keywords internal
 nsamples.ICCier <- function(object, ...){
   samps <- as.matrix(object$fit,pars='lp__')
@@ -80,11 +83,12 @@ nsamples.ICCier <- function(object, ...){
 #' @param object ICCier object.
 #'
 #' @return Loo object. See \code{\link[loo]{loo}}.
+#' @export
 #' @import loo
 #' @keywords internal
 #'
 loo.ICCier <- function(object,...){
-  LL_array <- log_lik(ICCier,merge_chains=FALSE)
+  LL_array <- log_lik(object,merge_chains=FALSE)
   r_eff <- relative_eff(exp(LL_array))
-  loo(LL_array,r_eff,...)
+  loo(x=LL_array,r_eff=r_eff,...)
 }

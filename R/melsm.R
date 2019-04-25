@@ -60,7 +60,7 @@ ICCier <- function(formula, data, ...){
   }
 
   mf <- model.frame(f, data,na.action='na.omit')
-  if(nrow(mf - n_orig) > 0){
+  if(nrow(mf) - nrow(n_orig) > 0){
     message(paste0('Dropping ',nrow(mf) - n_orig,' incomplete cases.'))
   }
 
