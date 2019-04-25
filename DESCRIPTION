@@ -18,7 +18,8 @@ Imports:
     rstantools (>= 1.5.1),
     mvtnorm (>= 1.0-10),
     Matrix (>= 1.2-17),
-    Formula (>= 1.2)
+    Formula (>= 1.2),
+    loo (>= 2.1.0)
 LinkingTo: 
     BH (>= 1.69.0-1),
     Rcpp (>= 1.0.1),

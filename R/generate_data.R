@@ -14,6 +14,7 @@
 #'
 #' @return
 #'
+#' @keywords internal
 datagen <- function(n,K,beta,gamma,eta,cor_structure){
   N <- n*K
   P <- nrow(beta)
@@ -85,6 +86,7 @@ datagen <- function(n,K,beta,gamma,eta,cor_structure){
 #'
 #' @return
 #'
+#' @keywords internal
 generate_df <- function(n,K,beta,gamma,eta,cor_structure){
   d <- datagen(n,K,beta,gamma,eta,cor_structure)
   ds <- data.frame(y=d$data$y,x_L1=d$data$x_sca_l1,group=d$data$group)

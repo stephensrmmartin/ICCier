@@ -25,3 +25,4 @@ generate_df(n, K, beta, gamma, eta, cor_structure)
 \description{
 Uses same as \code{\link{datagen}}, but outputs a data frame.
 }
+\keyword{internal}

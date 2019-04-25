@@ -12,8 +12,9 @@
 \item{data}{data}
 }
 \value{
-
+List containing stan data, group mapping, and the model frame.
 }
 \description{
 Parses formula using Formula.
 }
+\keyword{internal}

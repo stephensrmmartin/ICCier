@@ -25,3 +25,4 @@ datagen(n, K, beta, gamma, eta, cor_structure)
 \description{
 Generates data for use in testing.
 }
+\keyword{internal}

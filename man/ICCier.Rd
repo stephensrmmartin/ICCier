@@ -14,7 +14,7 @@ ICCier(formula, data, ...)
 \item{...}{Arguments passed to \code{\link[rstan]{sampling}}.}
 }
 \value{
-ICCier object.
+ICCier object. List containing the model formula, data, stan_data, model fit, and mapping between original ID and numeric ID.
 }
 \description{
 Runs the MELSM model and returns an ICCier object.
