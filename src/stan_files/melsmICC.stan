@@ -52,7 +52,7 @@ model {
   to_vector(mu_gamma_group_random_z) ~ std_normal();
   mu_gamma_group_random_cor_L ~ lkj_corr_cholesky(1);
   to_vector(eta) ~ std_normal();
-  to_vector(gamma) ~ normal(0,1);
+  to_vector(gamma) ~ std_normal();
   beta0 ~ normal(0,10);
 
   // Likelihood
