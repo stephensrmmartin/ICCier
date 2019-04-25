@@ -14,19 +14,28 @@ summary.ICCier <- function(object,prob=.95,...){
 
 }
 
-.get_beta <- function(object){
+.get_beta <- function(object,prob=.95,...){
 
 }
 
-.get_gamma <- function(object){
+.get_gamma <- function(object,prob=.95,...){
 
 }
 
-.get_eta <- function(object){
+.get_eta <- function(object,prob=.95,...){
 
 }
 
-.get_icc <- function(object){
+.get_icc <- function(object,prob=.95,...){
 
 }
 
+.posterior_mean <- function(object,pars){
+  samps <- as.matrix(object$fit, pars)
+  colMeans(samps)
+}
+
+.posterior_sd <- function(object,pars){
+  samps <- as.matrix(object$fit,pars)
+  apply(samps,2,sd)
+}
