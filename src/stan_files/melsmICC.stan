@@ -62,6 +62,7 @@ model {
 generated quantities {
   vector[N] icc = ICC(mu_gamma_group_random_sd[group,1], exp(rows_dot_product(x_sca_l1, gamma_group[group])));
   vector[N] log_lik;
+  corr_matrix[P_l1 + 1] Omega = multiply_lower_tri_self_transpose(mu_gamma_group_random_cor_L);
   {
     vector[N] yhat = mu_group[group];
     vector[N] shat = exp(rows_dot_product(x_sca_l1,gamma_group[group]));
