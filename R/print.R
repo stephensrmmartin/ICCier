@@ -99,11 +99,12 @@ print.summary.ICCier <- function(object,...){
   beta.sum <- unname(c(format(object$estimate$beta,...),paste0('[',format(object$ci$L$beta,...),' ',format(object$ci$U$beta,...),']')))
   eta.sum <- cbind(format(object$estimate$eta,...),matrix(paste0('[',format(object$ci$L$eta,...),' ',format(object$ci$U$eta,...),']'),nrow=nrow(object$estimate$eta)))
   gamma.sum <- cbind(format(object$estimate$gamma,...),matrix(paste0('[',format(object$ci$L$gamma,...),' ',format(object$ci$U$gamma,...),']'),nrow=nrow(object$estimate$gamma)))
+  names(beta.sum) <- c('',paste0(object$prob*100,'%'))
   colnames(eta.sum)[colnames(eta.sum) == ''] <- paste0(object$prob*100,'%')
   colnames(gamma.sum)[colnames(gamma.sum) == ''] <- paste0(object$prob*100,'%')
 
   cat('Coefficients:','\n\n')
-  cat('Mean: \t',format(beta.sum,...),'\n\n')
+  cat('Mean: \n');print(beta.sum,quote=FALSE,...);cat('\n')
   cat('L1 Scale: \n'); print(gamma.sum,quote=FALSE); cat('\n')
   cat('L2 Scale: \n'); print(eta.sum,quote=FALSE); cat('\n')
   cat('L1 Cor: \n'); print(object$estimate$omega,...); cat('\n')
@@ -223,7 +224,7 @@ print.summary.ICCier <- function(object,...){
     cat('\t Some Rhats > 1.1. Do not interpret results! The largest 10 are:\n')
     print(head(sort(diags$rhats,decreasing=TRUE),10))
   } else{
-    cat('\t Rhats: Passed')
+    cat('\t Rhats: Passed\n')
   }
 
   if(diags$div > 0){
