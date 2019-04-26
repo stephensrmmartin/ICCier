@@ -14,6 +14,7 @@ summary.ICCier <- function(object,prob=.95,...){
   beta <- .get_beta(object,prob,...)
   gamma <- .get_gamma(object,prob,...)
   eta <- .get_eta(object,prob,...)
+  omega <- .get_omega(object,prob,...)
   prob <- prob
   formula <- object$formula
 
@@ -109,6 +110,24 @@ print.summary.ICCier <- function(object){
   out <- mget(c('eta','eta.L','eta.U'))
 
   return(out)
+}
+
+.get_omega <- function(object,prob=.95,...){
+  fnames <- .get_formula_names(object)
+  omega <- .posterior_mean(object,'Omega')
+  omega.ci <- posterior_interval(object,prob=prob,pars='Omega')
+
+  D <- object$stan_data$P_l1 + 1
+  omega <- matrix(omega,nrow=D)
+  omega.L <- matrix(omega.ci[,1],D)
+  omega.U <- matrix(omega.ci[,2],D)
+
+  rownames(omega) <- colnames(omega) <- rownames(omega.L) <- colnames(omega.L) <-rownames(omega.U) <- colnames(omega.U) <- c('(Intercept.L)',fnames$l1)
+
+  out <- mget(c('omega','omega.L','omega.U'))
+
+  return(out)
+
 }
 
 .posterior_mean <- function(object,pars){
