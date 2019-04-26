@@ -14,20 +14,31 @@ summary.ICCier <- function(object,prob=.95,...){
   beta <- .get_beta(object,prob,...)
   gamma <- .get_gamma(object,prob,...)
   eta <- .get_eta(object,prob,...)
+  prob <- prob
+  formula <- object$formula
 
-  out <- 'filler'
+  out <- mget(c('formula','prob','beta','gamma','eta'))
   class(out) <- 'summary.ICCier'
   out
 }
 
 print.ICCier <- function(object,...){
-  cat('test print.ICCier\n')
+  cat('Formula:',deparse(object$formula),'\n')
+  cat('\n')
 
+
+  cat('Coefficients:','\n')
+  cat('Mean: \t',format(.get_beta(object)$mu,...),'\n\n')
+  cat('L1 Scale: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
+  cat('L2 Scale: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
+
+  invisible(object)
 }
 
-print.summary.ICCier <- function(object_summary){
-  cat('test print.summary.ICCier\n')
+print.summary.ICCier <- function(object){
+  cat('Formula:',deparse(object$formula))
 
+  invisible(object)
 }
 
 .diag_rhat <- function(object){
