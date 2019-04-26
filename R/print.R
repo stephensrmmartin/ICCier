@@ -110,8 +110,8 @@ print.summary.ICCier <- function(object,...){
 
   invisible(object)
 }
-#TODO: Improve the above. Need better separation between estimates and CIs. Also consider
-#   making it so it looks like estimate estimate2 [estimate.L-estimate.U, estimate2.L-estimate2.U]
+## TODO: Add digits to summary() as undocumented parameter. Store in meta. Pull into print, so can just run summary(object,digits=2).
+## TODO: Add option to extract gamma_group and beta_group. Not in summary, but in coef().
 
 .get_beta <- function(object,prob=.95,...){
   mu <- .posterior_mean(object,'beta0')
