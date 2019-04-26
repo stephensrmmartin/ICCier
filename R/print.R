@@ -32,12 +32,13 @@ print.ICCier <- function(object,...){
   cat('Mean: \t',format(.get_beta(object)$mu,...),'\n\n')
   cat('L1 Scale: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
   cat('L2 Scale: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
+  cat('L1 Cor: \n'); print(.get_omega(object)$omega,...); cat('\n')
 
   invisible(object)
 }
 
-print.summary.ICCier <- function(object){
-  cat('Formula:',deparse(object$formula))
+print.summary.ICCier <- function(object,...){
+  cat('Formula:',deparse(object$formula),'\n')
 
   invisible(object)
 }
