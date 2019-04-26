@@ -7,7 +7,14 @@
 #' @param prob Probability interval (default: .95)
 #' @param ... Currently not used.
 #'
-#' @return TBD
+#' @return ICCier summary object. List containing:
+#' \describe{
+#' \item{formula}{Model formula}
+#' \item{prob}{The specified prob argument}
+#' \item{estimate}{List of matrices of mean posterior point estimates}
+#' \item{ci}{List containing the lower (L) and upper (U) interval estimates for each parameter matrix.}
+#' \item{meta}{Meta-data including diagnostics, number of iterations, number of chains, total number of observations, and number of groups (persons)}
+#' }
 #' @export
 #'
 summary.ICCier <- function(object,prob=.95,...){
