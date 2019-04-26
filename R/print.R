@@ -179,22 +179,6 @@ print.summary.ICCier <- function(object,...){
   return(mget(c('l1','l2','outcome','grouping')))
 }
 
-.get_diagnostics <- function(object){
-  rhats <- rstan::summary(object$fit,pars=c('beta0','gamma','eta','mu_group','gamma_group'))$summary[,'Rhat']
-
-  n_effs <- rstan::summary(object$fit,pars=c('beta0','gamma','eta','mu_group','gamma_group','icc'))$summary[,'n_eff']
-
-  div <- rstan::get_num_divergent(object$fit)
-
-  tree.max <- rstan::get_num_max_treedepth(object$fit)
-  # tree <- rstan::get_max_treedepth_iterations(object$fit)
-
-  bfmi <- rstan::get_bfmi(object$fit)
-
-  return(mget(c('rhats','n_effs','div','tree.max','bfmi')))
-
-}
-
 .print_diagnostics <- function(object){
   diags <- object$diagnostics
   cat('Diagnostics:','\n')
