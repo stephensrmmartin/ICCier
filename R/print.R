@@ -17,29 +17,33 @@ summary.ICCier <- function(object,prob=.95,...){
   omega <- .get_omega(object,prob,...)
   prob <- prob
   formula <- object$formula
+
   chains <- object$fit@sim$chains
   iter <- list(iter=object$fit@sim$iter)
   iter$post <- iter$iter - object$fit@sim$warmup
   iter$total <- iter$post*chains
+  K <- object$stan_data$K
+  N <- object$stan_data$N
+  meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K)
 
-  estimate <- list(beta = t(beta$beta),
+  estimate <- list(beta = beta$mu,
                 gamma = t(gamma$gamma),
                 eta = t(eta$eta),
-                omega=omega,
+                omega=omega$omega,
                 beta_group = beta$beta_group,
                 gamma_group = gamma$gamma_group
                 )
-  ci.L <- list(beta = t(beta$beta.L),
+  ci.L <- list(beta = beta$mu.L,
                 gamma = t(gamma$gamma.L),
                 eta = t(eta$eta.L),
-                omega=omega.L,
+                omega=omega$omega.L,
                 beta_group = beta$beta_group.L,
                 gamma_group = gamma$gamma_group.L
                 )
-  ci.U <- list(beta = t(beta$beta.U),
+  ci.U <- list(beta = beta$mu.U,
                 gamma = t(gamma$gamma.U),
                 eta = t(eta$eta.U),
-                omega=omega.U,
+                omega=omega$omega.U,
                 beta_group = beta$beta_group.U,
                 gamma_group = gamma$gamma_group.U
                 )
@@ -48,7 +52,9 @@ summary.ICCier <- function(object,prob=.95,...){
   out <- list(formula=formula,
               prob=prob,
               estimate=estimate,
-              ci=ci)
+              ci=ci,
+              meta=meta
+              )
   class(out) <- 'summary.ICCier'
   out
 }
@@ -68,14 +74,37 @@ print.ICCier <- function(object,...){
 }
 
 print.summary.ICCier <- function(object,...){
+
   cat('Formula:',deparse(object$formula),'\n')
+  cat('Number of observations:', object$meta$N,'\n')
+  cat('Number of groups:',object$meta$K,'\n')
+  cat('\n--------------------\n')
+  .print_diagnostics(object$meta$diagnostics)
+  cat('\n--------------------\n')
+
+  # colnames(object$ci$L$eta) <- rep(paste0((1-object$prob)/2*100,'%'),ncol(object$ci$L$eta))
+  # colnames(object$ci$U$eta) <- rep(paste0((1 - (1-object$prob)/2)*100,'%'),ncol(object$ci$U$eta))
+  # colnames(object$ci$L$gamma) <- rep(paste0((1-object$prob)/2*100,'%'),ncol(object$ci$L$gamma))
+  # colnames(object$ci$U$gamma) <- rep(paste0((1 - (1-object$prob)/2)*100,'%'),ncol(object$ci$U$gamma))
+  # colnames(object$ci$L$omega) <- rep(paste0((1-object$prob)/2*100,'%'),ncol(object$ci$L$omega))
+  # colnames(object$ci$U$omega) <- rep(paste0((1 - (1-object$prob)/2)*100,'%'),ncol(object$ci$U$omega))
+
+  beta.sum <- unname(c(format(object$estimate$beta,...),paste0('[',format(object$ci$L$beta,...),' ',format(object$ci$U$beta,...),']')))
+  eta.sum <- cbind(format(object$estimate$eta,...),matrix(paste0('[',format(object$ci$L$eta,...),' ',format(object$ci$U$eta,...),']'),nrow=nrow(object$estimate$eta)))
+  gamma.sum <- cbind(format(object$estimate$gamma,...),matrix(paste0('[',format(object$ci$L$gamma,...),' ',format(object$ci$U$gamma,...),']'),nrow=nrow(object$estimate$gamma)))
+  colnames(eta.sum)[colnames(eta.sum) == ''] <- paste0(object$prob*100,'%')
+  colnames(gamma.sum)[colnames(gamma.sum) == ''] <- paste0(object$prob*100,'%')
+
+  cat('Coefficients:','\n\n')
+  cat('Mean: \t',format(beta.sum,...),'\n\n')
+  cat('L1 Scale: \n'); print(gamma.sum,quote=FALSE); cat('\n')
+  cat('L2 Scale: \n'); print(eta.sum,quote=FALSE); cat('\n')
+  cat('L1 Cor: \n'); print(object$estimate$omega,...); cat('\n')
 
   invisible(object)
 }
-
-.diag_rhat <- function(object){
-
-}
+#TODO: Improve the above. Need better separation between estimates and CIs. Also consider
+#   making it so it looks like estimate estimate2 [estimate.L-estimate.U, estimate2.L-estimate2.U]
 
 .get_beta <- function(object,prob=.95,...){
   mu <- .posterior_mean(object,'beta0')
@@ -179,8 +208,8 @@ print.summary.ICCier <- function(object,...){
   return(mget(c('l1','l2','outcome','grouping')))
 }
 
-.print_diagnostics <- function(object){
-  diags <- object$diagnostics
+.print_diagnostics <- function(diagnostics){
+  diags <- diagnostics
   cat('Diagnostics:','\n')
   if(sum(diags$rhats > 1.1)){
     cat('\t Rhats: Failed\n')
