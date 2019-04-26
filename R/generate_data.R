@@ -56,6 +56,7 @@ datagen <- function(n,K,beta,gamma,eta,cor_structure){
   beta_group <- betaGamma[,1:P_random,drop=FALSE]
   gamma_group <- betaGamma[,(P_random + 1):ncol(betaGamma),drop=FALSE]
 
+
   ## Generate L1 observations
   X_loc_l1 <- matrix(1,N,1)
   X_sca_l1 <- mvtnorm::rmvnorm(N,sigma=diag(1,nrow=Q_random,ncol=Q_random))
@@ -64,9 +65,10 @@ datagen <- function(n,K,beta,gamma,eta,cor_structure){
   # X_sca_l1 <- cbind(1,mvtnorm::rmvnorm(N,sigma=diag(1,nrow=Q_random-1,ncol=Q_random-1)))
 
   y <- rowSums(X_loc_l1 * beta_group[group,,drop=FALSE]) + rnorm(N,0,exp(rowSums(X_sca_l1 * gamma_group[group,,drop=FALSE])))
+  icc <- betaGamma_random_sigma[group,1]^2 / (betaGamma_random_sigma[group,1]^2 + exp(rowSums(X_sca_l1 * gamma_group[group,,drop=FALSE]))^2)
 
   ## Package up
-  params <- list(beta=beta,gamma=gamma,eta=eta,Omega=Omega,betaGamma_random_cor_L=betaGamma_random_cor_L,beta_group=beta_group,gamma_group=gamma_group,betaGamma_random=betaGamma_random,betaGamma_random_sigma = betaGamma_random_sigma)
+  params <- list(beta=beta,gamma=gamma,eta=eta,Omega=Omega,betaGamma_random_cor_L=betaGamma_random_cor_L,beta_group=beta_group,gamma_group=gamma_group,betaGamma_random=betaGamma_random,betaGamma_random_sigma = betaGamma_random_sigma,icc=icc)
   meta <- list(n=n,K=K,N=N,P=P,Q=Q,P_random=P_random,Q_random=Q_random)
   data <- list(n=n,K=K,N=N,P=P,P_l2=Q,P_l1=P_random,Q_random=Q_random,y=y,x_loc_l2=X_loc_l2,x_sca_l2=X_sca_l2,x_loc_l1=X_loc_l1,x_sca_l1=X_sca_l1,group=group)
   list(params=params,meta=meta,data=data)

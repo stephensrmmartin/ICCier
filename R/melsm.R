@@ -30,12 +30,22 @@
 #' @export
 #'
 ICCier <- function(formula, data, ...){
+  dots <- list(...)
+  # if(is.null(dots$control)){
+  #   dots$control <- list(adapt_delta=.95)
+  # }
+
   d <- .parse_formula(formula, data)
+  # args <- list(object=stanmodels$melsmICC, data=d$stan_data,
+  #           pars = c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega'),
+  #           unlist(dots),...)
+  # stanOut <- do.call('sampling',args=args)
   stanOut <- rstan::sampling(stanmodels$melsmICC,data=d$stan_data,pars=c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega'),...)
   out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map)
   class(out) <- c('ICCier')
   return(out)
 }
+##TODO: Change above to allow default adapt_delta. Uncommenting doesn't work, because nothing else is passed to do.call, and rstan throws a hissy fit.
 
 #' Parses formula using Formula.
 #'
