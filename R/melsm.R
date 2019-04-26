@@ -42,6 +42,8 @@ ICCier <- function(formula, data, ...){
   # stanOut <- do.call('sampling',args=args)
   stanOut <- rstan::sampling(stanmodels$melsmICC,data=d$stan_data,pars=c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega'),...)
   out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map)
+  diagnostics <- .get_diagnostics(out)
+  out$diagnostics <- diagnostics
   class(out) <- c('ICCier')
   return(out)
 }
