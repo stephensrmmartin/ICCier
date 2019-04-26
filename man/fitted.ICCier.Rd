@@ -4,15 +4,21 @@
 \alias{fitted.ICCier}
 \title{ICCier method to extract ICC values.}
 \usage{
-\method{fitted}{ICCier}(object)
+\method{fitted}{ICCier}(object, summary = TRUE, prob = 0.95,
+  inc_group = TRUE)
 }
 \arguments{
 \item{object}{ICCier object}
 
+\item{summary}{Logical. Whether to return summary (mean, intervals) of ICCs (TRUE), or posterior samples (FALSE)}
+
+\item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
+
 \item{...}{Not currently used.}
 }
 \value{
-TBD
+If \code{summary=TRUE}, then the mean and \code{prob}% intervals are returned for each observation in the model frame.
+If \code{summary=FALSE}, an S by N matrix containing the S posterior samples for N observations.
 }
 \description{
 ICCier method to extract ICC values.

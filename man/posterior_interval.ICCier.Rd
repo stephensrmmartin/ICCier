@@ -11,7 +11,7 @@
 
 \item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
 
-\item{pars}{Parameter type in \code{c('')}}
+\item{pars}{Parameter name.}
 
 \item{...}{Not used.}
 }

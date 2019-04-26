@@ -60,8 +60,8 @@ ICCier <- function(formula, data, ...){
   }
 
   mf <- model.frame(f, data,na.action='na.omit')
-  if(nrow(mf) - nrow(n_orig) > 0){
-    message(paste0('Dropping ',nrow(mf) - n_orig,' incomplete cases.'))
+  if(n_orig - nrow(mf) > 0){
+    message(paste0('Dropping ',n_orig - nrow(mf) ,' incomplete cases.'))
   }
 
   group <- model.frame(f,mf,lhs=2,rhs=0,drop.unused.levels = TRUE)

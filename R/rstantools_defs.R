@@ -3,7 +3,7 @@
 #'
 #' @param object ICCier object.
 #' @param prob A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.
-#' @param pars Parameter type in \code{c('')}
+#' @param pars Parameter name.
 #' @param ... Not used.
 #'
 #' @return Matrix with two columns (lower and upper) and one parameter per row.
