@@ -29,6 +29,8 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
     grouping_available <- TRUE
   }
 
+  samps <- .extract_transform(object,draws)
+
 }
 # TODO: Needs to handle existing (known) groups as well as unknown.
 # If known, pull from the group_map which integer they belong to.
