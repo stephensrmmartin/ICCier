@@ -44,6 +44,8 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 #' However, for prediction, we need the group-specific random effects.
 #' This function takes the object and returns the computed REs.
 #'
+#' group_gamma = x_sca_l2%*%gamma + group_gamma_random
+#'
 #' @param object ICCier object.
 #'
 #' @keywords internal

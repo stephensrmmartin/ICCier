@@ -17,4 +17,7 @@ gamma_group and beta_group are returned.
 However, for prediction, we need the group-specific random effects.
 This function takes the object and returns the computed REs.
 }
+\details{
+group_gamma = x_sca_l2%*%gamma + group_gamma_random
+}
 \keyword{internal}
