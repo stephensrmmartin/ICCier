@@ -38,6 +38,21 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 # If no groups specified, just use fixed effects, b/c there's no other information available.
 # Remember: You only need to predict ICC = var(mean)/(var(mean) + var(within)) for each row, across samples.
 
+#' Extracts random effect samples.
+#'
+#' gamma_group and beta_group are returned.
+#' However, for prediction, we need the group-specific random effects.
+#' This function takes the object and returns the computed REs.
+#'
+#' @param object ICCier object.
+#'
+#' @keywords internal
+#' @return Samples of REs.
+.get_random_effect_samples <- function(object){
+
+}
+# TODO: Will need to compute the actual random effects, not just gamma_group. Can always take samps and subtract off rather than reworking everything else.
+
 #' Extracts samples, turns them into formed matrices for prediction
 #'
 #' Extracts \code{draws} of the generative parameters.
