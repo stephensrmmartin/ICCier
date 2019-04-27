@@ -14,6 +14,8 @@
 
 \item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
 
+\item{inc_group}{Logical. Whether to include the grouping variable with the estimates.}
+
 \item{...}{Not currently used.}
 }
 \value{

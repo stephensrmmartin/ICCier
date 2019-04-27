@@ -4,12 +4,21 @@
 \alias{predict.ICCier}
 \title{ICCier method to predict new ICC values.}
 \usage{
-\method{predict}{ICCier}(object, data, ...)
+\method{predict}{ICCier}(object, newdata = NULL, draws = NULL,
+  summary = TRUE, prob = 0.95, inc_group = TRUE, ...)
 }
 \arguments{
 \item{object}{ICCier object}
 
-\item{data}{Data to predict from. If NULL, calls \code{\link{fitted.ICCier}} on fit data.}
+\item{newdata}{Data to predict from. If NULL, calls \code{\link{fitted.ICCier}} on fit data.}
+
+\item{draws}{Number of draws to use from posterior samples for prediction. Default: All of them.}
+
+\item{summary}{Logical. Whether to return summary (mean, intervals) of ICCs (TRUE), or posterior samples (FALSE)}
+
+\item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
+
+\item{inc_group}{Logical. Whether to include the grouping variable with the estimates.}
 
 \item{...}{Not currently used.}
 }
