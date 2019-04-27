@@ -36,6 +36,35 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 # If no groups specified, just use fixed effects, b/c there's no other information available.
 # Remember: You only need to predict ICC = var(mean)/(var(mean) + var(within)) for each row, across samples.
 
+#' Extracts samples, turns them into formed matrices for prediction
+#'
+#' Extracts \code{draws} of the generative parameters.
+#' For matrices, converts to array; e.g., gamma is a [P_l2,P_l1,draws] array.
+#' This will ease the computation of predictions, because it can be applied over draws.
+#'
+#' @param object ICCier object.
+#' @param draws Number of draws
+#'
+#' @keywords internal
+#'
+#' @return List of arrays.
+.extract_transform <- function(object,draws){
+  K <- object$stan_data$K
+  P_l2 <- object$stan_data$P_l2
+  P_l1 <- object$stan_data$P_l1
+  # Only these are needed for predicting ICC
+  samps <- as.matrix(object$fit, pars = c('gamma','eta','gamma_group','Omega'))[1:draws,]
+  gamma.cols <- grep('gamma.*',colnames(samps),value = TRUE)
+  eta.cols <- grep('eta.*',colnames(samps),value = TRUE)
+  gamma_group.cols <- grep('gamma_group.*',colnames(samps),value = TRUE)
+  Omega.cols <- grep('Omega.*',colnames(samps),value = TRUE)
+
+  gamma <- array(t(samps[,gamma.cols]),dim=c(P_l2,P_l1,draws))
+  eta <- array(t(samps[,eta.cols]),dim=c(P_l2,P_l1 + 1,draws))
+  Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + 1,P_l1 + 1,draws))
+  gamma_group <- array(t(samps[,gamma_group.cols]),dim=c(K,P_l1,draws))
+  return(mget(c('gamma','eta','gamma_group','Omega')))
+}
 
 #' ICCier method to extract ICC values.
 #'
