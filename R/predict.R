@@ -49,9 +49,36 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 #' @param object ICCier object.
 #'
 #' @keywords internal
-#' @return Samples of REs.
-.get_random_effect_samples <- function(object){
+#' @return Samples of RE matrices: Arrays with dimensions KxP_l1xdraws.
+.get_random_effect_samples <- function(object,draws=NULL){
+  if(is.null(draws)){
+    draws <- (object$fit@sim$iter - object$fit@sim$warmup)*object$fit@sim$chains
+  }
+  K <- object$stan_data$K
+  P_l1 <- object$stan_data$P_l1
+  P_l2 <- object$stan_data$P_l2
+  X <- object$stan_data$x_sca_l2
 
+  samps.mu <- as.matrix(object$fit,pars='beta0')[1:draws,,drop=FALSE]
+  samps.gamma <- array(t(as.matrix(object$fit,pars='gamma')[1:draws,]),dim=c(P_l2,P_l1,draws))
+  samps.mu_group <- as.matrix(object$fit,pars='mu_group')[1:draws,,drop=FALSE]
+  samps.mu_group <- array(t(samps.mu_group),dim=c(K,1,draws))
+  samps.gamma_group <- as.matrix(object$fit,pars='gamma_group')[1:draws,,drop=FALSE]
+  samps.gamma_group <- array(t(samps.gamma_group),dim=c(K,P_l1,draws))
+
+  group_mu_random <- sapply(1:draws,FUN=function(x){
+    samps.mu_group[,,x] - samps.mu[x,1]
+  },simplify='array')
+  group_mu_random <- array(group_mu_random,dim=c(K,1,draws))
+  group_gamma_random <- sapply(1:draws,FUN=function(x){
+    samps.gamma_group[,,x] - X%*%samps.gamma[,,x]
+  },simplify = 'array')
+  group_gamma_random <- array(group_gamma_random,dim=c(K,P_l1,draws))
+
+  colnames(group_mu_random) <- '(Intercept.L)'
+  colnames(group_gamma_random) <- colnames(X)
+
+  list(mu_random = group_mu_random, gamma_random = group_gamma_random)
 }
 # TODO: Will need to compute the actual random effects, not just gamma_group. Can always take samps and subtract off rather than reworking everything else.
 
@@ -82,7 +109,8 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   eta <- array(t(samps[,eta.cols]),dim=c(P_l2,P_l1 + 1,draws))
   Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + 1,P_l1 + 1,draws))
   gamma_group <- array(t(samps[,gamma_group.cols]),dim=c(K,P_l1,draws))
-  return(mget(c('gamma','eta','gamma_group','Omega')))
+  gamma_random <- .get_random_effect_samples(object,draws)$gamma_random
+  return(mget(c('gamma','eta','gamma_random','Omega')))
 }
 
 #' ICCier method to extract ICC values.
