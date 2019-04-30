@@ -4,13 +4,13 @@
 \alias{.get_random_effect_samples}
 \title{Extracts random effect samples.}
 \usage{
-.get_random_effect_samples(object)
+.get_random_effect_samples(object, draws = NULL)
 }
 \arguments{
 \item{object}{ICCier object.}
 }
 \value{
-Samples of REs.
+Samples of RE matrices: Arrays with dimensions KxP_l1xdraws.
 }
 \description{
 gamma_group and beta_group are returned.
