@@ -150,8 +150,9 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   eta <- array(t(samps[,eta.cols]),dim=c(P_l2,P_l1 + 1,draws))
   Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + 1,P_l1 + 1,draws))
   gamma_group <- array(t(samps[,gamma_group.cols]),dim=c(K,P_l1,draws))
-  gamma_random <- .get_random_effect_samples(object,draws)$gamma_random
-  return(mget(c('gamma','eta','gamma_random','Omega')))
+  # gamma_random <- .get_random_effect_samples(object,draws)$gamma_random
+  gamma_random_z <- .get_random_effect_samples(object,draws)[,2:(P_l1 + 1),]
+  return(mget(c('gamma','eta','gamma_random_z','Omega')))
 }
 
 #' ICCier method to extract ICC values.
