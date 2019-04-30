@@ -11,6 +11,8 @@
 #'
 predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.95,inc_group=TRUE, ...){
   fnames <- .get_formula_names(object)
+  magic_NA <- 'NA_ICCier'
+  magic_ignore <- 'Ignore_ICCier'
   if(is.null(data)){
    return(fitted(object,summary,prob,inc_group))
   }
@@ -25,13 +27,15 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   if(!(fnames$grouping %in% colnames(newdata))){
     grouping_available <- FALSE
     message('No grouping variable. Using fixef only.')
-    newdata[,fnames$grouping] <- NA
+    newdata[,fnames$grouping] <- magic_ignore
   } else{
     grouping_available <- TRUE
   }
   group_known <- newdata[,fnames$grouping] %in% object$data[,fnames$grouping]
 
   samps <- .extract_transform(object,draws)
+  dat <- .parse_formula(object$formula,newdata,predict=TRUE)
+  dat
 
 }
 # TODO: Needs to handle existing (known) groups as well as unknown.

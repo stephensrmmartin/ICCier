@@ -4,12 +4,14 @@
 \alias{.parse_formula}
 \title{Parses formula using Formula.}
 \usage{
-.parse_formula(formula, data)
+.parse_formula(formula, data, predict = FALSE)
 }
 \arguments{
 \item{formula}{formula}
 
 \item{data}{data}
+
+\item{predict}{Logical. Default: FALSE. If True, y is ignored, and the data requires grouping variable and predictors.}
 }
 \value{
 List containing stan data, group mapping, and the model frame.

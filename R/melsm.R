@@ -55,11 +55,12 @@ ICCier <- function(formula, data, ...){
 #'
 #' @param formula formula
 #' @param data data
+#' @param predict Logical. Default: FALSE. If True, y is ignored, and the data requires grouping variable and predictors.
 #'
 #' @return List containing stan data, group mapping, and the model frame.
 #' @keywords internal
 #'
-.parse_formula <- function(formula, data){
+.parse_formula <- function(formula, data,predict=FALSE){
   n_orig <- nrow(data)
 
   f <- Formula::Formula(formula)
@@ -70,8 +71,13 @@ ICCier <- function(formula, data, ...){
   if(length.f[2] != 2){
     stop('Both the level 1 and level 2 formulas must be specified.')
   }
+  fnames <- attr(terms(f),'term.labels')
 
-  mf <- model.frame(f, data,na.action='na.omit')
+  if(predict){
+    mf <- model.frame(f,data,na.action='na.omit',lhs=2)
+  } else {
+    mf <- model.frame(f, data,na.action='na.omit')
+  }
   if(n_orig - nrow(mf) > 0){
     message(paste0('Dropping ',n_orig - nrow(mf) ,' incomplete cases.'))
   }
@@ -79,7 +85,7 @@ ICCier <- function(formula, data, ...){
   group <- model.frame(f,mf,lhs=2,rhs=0,drop.unused.levels = TRUE)
   group$group_numeric <- as.numeric(as.factor(group[,1]))
 
-  mf[,2] <- group$group_numeric
+  mf[,fnames[2]] <- group$group_numeric
 
   N <- nrow(mf)
   K <- length(unique(group$group_numeric))
@@ -93,7 +99,11 @@ ICCier <- function(formula, data, ...){
   x_sca_l2 <- model.matrix(f,x_sca_l2,rhs=2)
   P_l2 <- ncol(x_sca_l2)
 
-  y <- mf[,1]
+  if(predict){
+    y <- NA
+  } else {
+    y <- mf[,fnames[1]]
+  }
   stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y'))
   stan_data$group <- group$group_numeric
   return(list(stan_data=stan_data,group_map = group, model.frame = mf))
