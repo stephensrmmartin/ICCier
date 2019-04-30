@@ -34,6 +34,8 @@ transformed parameters {
   matrix[K,P_l1 + 1] mu_gamma_group_random;
   vector[K] mu_group;
   matrix[K,P_l1] gamma_group;
+  vector[N] yhat;
+  vector[N] shat;
 
   for(k in 1:K){
     mu_gamma_group_random[k] = mu_gamma_group_random_z[k] * diag_pre_multiply(mu_gamma_group_random_sd[k],mu_gamma_group_random_cor_L)';
@@ -41,12 +43,14 @@ transformed parameters {
   mu_group = beta0 + mu_gamma_group_random[,1];
   gamma_group = x_sca_l2*gamma + mu_gamma_group_random[,2:];
 
+  yhat = mu_group[group];
+  shat = exp(rows_dot_product(x_sca_l1,gamma_group[group]));
 }
 
 model {
   // Predictions
-  vector[N] yhat = mu_group[group];
-  vector[N] shat = exp(rows_dot_product(x_sca_l1,gamma_group[group]));
+  // vector[N] yhat = mu_group[group];
+  // vector[N] shat = exp(rows_dot_product(x_sca_l1,gamma_group[group]));
 
   // Priors
   to_vector(mu_gamma_group_random_z) ~ std_normal();
@@ -60,12 +64,10 @@ model {
 }
 
 generated quantities {
-  vector[N] icc = ICC(mu_gamma_group_random_sd[group,1], exp(rows_dot_product(x_sca_l1, gamma_group[group])));
+  vector[N] icc = ICC(mu_gamma_group_random_sd[group,1], shat);
   vector[N] log_lik;
   corr_matrix[P_l1 + 1] Omega = multiply_lower_tri_self_transpose(mu_gamma_group_random_cor_L);
   {
-    vector[N] yhat = mu_group[group];
-    vector[N] shat = exp(rows_dot_product(x_sca_l1,gamma_group[group]));
     for(n in 1:N){
       log_lik[n] = normal_lpdf(y[n] | yhat[n],shat[n]);
     }
