@@ -228,7 +228,7 @@ print.summary.ICCier <- function(object,...){
   }
 
   if(diags$div > 0){
-    cat('\t Divergent Transitions: Failed -',div,'divergent transitions detected. \n')
+    cat('\t Divergent Transitions: Failed -',diags$div,'divergent transitions detected. \n')
   } else {
     cat('\t Divergent transitions: Passed \n')
   }
