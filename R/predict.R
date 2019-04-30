@@ -180,7 +180,7 @@ fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE){
     out <- as.data.frame(cbind(mean=matrix(.posterior_mean(object,pars='icc'),ncol=1),posterior_interval(object,prob=prob,pars='icc')))
     colnames(out)[1] <- 'mean'
     if(inc_group){
-      out[,.get_formula_names(object)$grouping] <- object$group_map[,1]
+      out[,.get_formula_names(object)$grouping] <- object$group_map$group_L1[,1]
     }
   } else {
     out <- as.matrix(object$fit,pars='icc')

@@ -82,19 +82,21 @@ ICCier <- function(formula, data, ...){
     message(paste0('Dropping ',n_orig - nrow(mf) ,' incomplete cases.'))
   }
 
-  group <- model.frame(f,mf,lhs=2,rhs=0,drop.unused.levels = TRUE)
-  group$group_numeric <- as.numeric(as.factor(group[,1]))
+  group_L1 <- model.frame(f,mf,lhs=2,rhs=0,drop.unused.levels = TRUE)
+  group_L1$group_numeric <- as.numeric(as.factor(group_L1[,1]))
+  group_L2 <- as.data.frame(do.call(rbind, lapply(split(group_L1, f=group_L1$group_numeric), FUN=function(x){x[1,]})))
+  group <- list(group_L1 = group_L1, group_L2= group_L2)
 
-  mf[,fnames[2]] <- group$group_numeric
+  mf[,fnames[2]] <- group$group_L1$group_numeric
 
   N <- nrow(mf)
-  K <- length(unique(group$group_numeric))
+  K <- length(unique(group$group_L1$group_numeric))
 
   x_sca_l1 <- model.matrix(f, mf, rhs=1)
   P_l1 <- ncol(x_sca_l1)
 
   x_sca_l2.mf <- model.frame(f,mf,lhs=2,rhs=2)
-  x_sca_l2 <- as.data.frame(do.call(rbind,lapply(split(x_sca_l2.mf,f=group$group_numeric),function(x){x[1,]})))
+  x_sca_l2 <- as.data.frame(do.call(rbind,lapply(split(x_sca_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
   x_sca_l2 <- x_sca_l2[order(x_sca_l2[,1]),-1,drop=FALSE]
   x_sca_l2 <- model.matrix(f,x_sca_l2,rhs=2)
   P_l2 <- ncol(x_sca_l2)
@@ -105,7 +107,7 @@ ICCier <- function(formula, data, ...){
     y <- mf[,fnames[1]]
   }
   stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y'))
-  stan_data$group <- group$group_numeric
+  stan_data$group <- group$group_L1$group_numeric
   return(list(stan_data=stan_data,group_map = group, model.frame = mf))
 }
 
