@@ -66,6 +66,13 @@ summary.ICCier <- function(object,prob=.95,...){
   out
 }
 
+#' Print method for ICCIer object.
+#'
+#' @param object ICCier object.
+#' @param ... Further arguments to \code{print}.
+#'
+#' @export
+#'
 print.ICCier <- function(object,...){
   cat('Formula:',deparse(object$formula),'\n')
   cat('\n')
@@ -80,6 +87,14 @@ print.ICCier <- function(object,...){
   invisible(object)
 }
 
+#' Print method for ICCier summaries.
+#'
+#' @param object Output of \code{summary(ICCierObject)}.
+#' @inheritParams print.ICCier
+#'
+#' @return Invisibly returns summary object.
+#' @export
+#'
 print.summary.ICCier <- function(object,...){
 
   cat('Formula:',deparse(object$formula),'\n')
