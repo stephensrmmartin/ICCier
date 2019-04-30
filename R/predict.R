@@ -88,6 +88,41 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 }
 # TODO: Will need to compute the actual random effects, not just gamma_group. Can always take samps and subtract off rather than reworking everything else.
 
+#' Extract standardized RE
+#'
+#' log(sds) = x_sca_l2%*%eta
+#' RE = RE_z%\*%t(diag(sds)%\*%L_cor)
+#' RE_z = RE %*% solve(t(diag(sds)%*%L_cor))
+#'
+#' @param object ICCier object
+#' @inheritParams predict.ICCier
+#'
+#' @return Kx(P_l1 + 1)xS array of standardized REs.
+#' @keywords internal
+#'
+.get_random_effect_z_samples <- function(object,draws=NULL){
+  if(is.null(draws)){
+    draws <- (object$fit@sim$iter - object$fit@sim$warmup)*object$fit@sim$chains
+  }
+  rand_samps <- .get_random_effect_samples(object,draws)
+  samps <- sapply(1:draws,function(x){cbind(rand_samps$mu_random[,,x],rand_samps$gamma_random[,,x])},simplify='array')
+  omega <- array(t(as.matrix(object$fit,pars='Omega')[1:draws,]),dim=c(object$stan_data$P_l1 + 1, object$stan_data$P_l1 + 1,draws))
+  eta <- array(t(as.matrix(object$fit,pars='eta')[1:draws,]),dim=c(object$stan_data$P_l2, object$stan_data$P_l1 + 1, draws))
+
+  L_omega <- array(apply(omega,3,function(x){t(chol(x))}),dim=dim(omega))
+  sds <- sapply(1:draws,FUN = function(x){
+    (exp(object$stan_data$x_sca_l2 %*% eta[,,x]))
+  }, simplify='array')
+
+  sapply(1:draws,FUN=function(x){
+    t(sapply(1:dim(sds)[1], FUN=function(y){
+      samps[y,,x] %*% solve(t(diag(sds[y,,x]) %*% L_omega[,,x]))
+    },simplify='matrix')
+    )
+  },simplify='array')
+
+}
+
 #' Extracts samples, turns them into formed matrices for prediction
 #'
 #' Extracts \code{draws} of the generative parameters.
