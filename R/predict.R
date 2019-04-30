@@ -65,6 +65,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   P_l2 <- object$stan_data$P_l2
   X <- object$stan_data$x_sca_l2
 
+  # Grab (formatted) matrices
   samps.mu <- as.matrix(object$fit,pars='beta0')[1:draws,,drop=FALSE]
   samps.gamma <- array(t(as.matrix(object$fit,pars='gamma')[1:draws,]),dim=c(P_l2,P_l1,draws))
   samps.mu_group <- as.matrix(object$fit,pars='mu_group')[1:draws,,drop=FALSE]
@@ -72,6 +73,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   samps.gamma_group <- as.matrix(object$fit,pars='gamma_group')[1:draws,,drop=FALSE]
   samps.gamma_group <- array(t(samps.gamma_group),dim=c(K,P_l1,draws))
 
+  # Solve for RE
   group_mu_random <- sapply(1:draws,FUN=function(x){
     samps.mu_group[,,x] - samps.mu[x,1]
   },simplify='array')
@@ -150,7 +152,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   gamma <- array(t(samps[,gamma.cols]),dim=c(P_l2,P_l1,draws))
   eta <- array(t(samps[,eta.cols]),dim=c(P_l2,P_l1 + 1,draws))
   Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + 1,P_l1 + 1,draws))
-  gamma_group <- array(t(samps[,gamma_group.cols]),dim=c(K,P_l1,draws))
+  # gamma_group <- array(t(samps[,gamma_group.cols]),dim=c(K,P_l1,draws))
   # gamma_random <- .get_random_effect_samples(object,draws)$gamma_random
   gamma_random_z <- .get_random_effect_z_samples(object,draws)[,2:(P_l1 + 1),,drop=FALSE]
   return(mget(c('gamma','eta','gamma_random_z','Omega')))
