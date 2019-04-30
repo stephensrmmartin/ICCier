@@ -10,6 +10,7 @@
 #' @export
 #'
 predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.95,inc_group=TRUE, ...){
+  fnames <- .get_formula_names(object)
   if(is.null(data)){
    return(fitted(object,summary,prob,inc_group))
   }
@@ -21,13 +22,14 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
     stop('More draws specified than actually exist.')
   }
 
-  fnames <- .get_formula_names(object$formula)
   if(!(fnames$grouping %in% colnames(newdata))){
     grouping_available <- FALSE
     message('No grouping variable. Using fixef only.')
+    newdata[,fnames$grouping] <- NA
   } else{
     grouping_available <- TRUE
   }
+  group_known <- newdata[,fnames$grouping] %in% object$data[,fnames$grouping]
 
   samps <- .extract_transform(object,draws)
 
@@ -37,6 +39,10 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 # If unknown, assign a value, then randomly draw from RE distribution(s) instead on each iteration.
 # If no groups specified, just use fixed effects, b/c there's no other information available.
 # Remember: You only need to predict ICC = var(mean)/(var(mean) + var(within)) for each row, across samples.
+# TODO: Actually, you need random_z for known groups. random includes the effect of eta already; so to ...
+# predict new values, you need var(within) ~~ x_sca_l1%*%t(predicted_gamma + u_gammas), and u_gammas ...
+# ~ MVN(0, Sigma(eta,x_sca_l2)). B/c x_sca_l2 can differ, we need _z separated out, predict new RE SDs, then ...
+# create new Sigma.
 
 #' Extracts random effect samples.
 #'
