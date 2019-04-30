@@ -76,13 +76,14 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
     samps.mu_group[,,x] - samps.mu[x,1]
   },simplify='array')
   group_mu_random <- array(group_mu_random,dim=c(K,1,draws))
+
   group_gamma_random <- sapply(1:draws,FUN=function(x){
     samps.gamma_group[,,x] - X%*%samps.gamma[,,x]
   },simplify = 'array')
   group_gamma_random <- array(group_gamma_random,dim=c(K,P_l1,draws))
 
   colnames(group_mu_random) <- '(Intercept.L)'
-  colnames(group_gamma_random) <- colnames(X)
+  colnames(group_gamma_random) <- colnames(object$stan_data$x_sca_l1)
 
   list(mu_random = group_mu_random, gamma_random = group_gamma_random)
 }
@@ -151,7 +152,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + 1,P_l1 + 1,draws))
   gamma_group <- array(t(samps[,gamma_group.cols]),dim=c(K,P_l1,draws))
   # gamma_random <- .get_random_effect_samples(object,draws)$gamma_random
-  gamma_random_z <- .get_random_effect_samples(object,draws)[,2:(P_l1 + 1),]
+  gamma_random_z <- .get_random_effect_z_samples(object,draws)[,2:(P_l1 + 1),,drop=FALSE]
   return(mget(c('gamma','eta','gamma_random_z','Omega')))
 }
 
