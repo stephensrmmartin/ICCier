@@ -5,7 +5,7 @@
 #'
 #' \code{ICCier} uses the mixed effects location scale model to estimate an intercept-only
 #' location model with random effect of person.
-#' The within-person variances are log-linearly modelled from a set of observation-level and
+#' The within-person variances (i.e., residual, or error variances) are log-linearly modelled from a set of observation-level and
 #' person-level predictors, with coefficients \eqn{\gamma}.
 #' The between-person variances are also log-linearly modelled from a set of person-level predictors,
 #' with coefficients \eqn{\eta}.
