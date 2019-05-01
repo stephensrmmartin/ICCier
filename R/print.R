@@ -4,7 +4,7 @@
 #' Summaries of parameter estimates and MCMC convergence diagnostics.
 #'
 #' @param object An ICCier object.
-#' @param prob Probability interval (default: .95)
+#' @inheritParams posterior_interval
 #' @param ... Currently not used.
 #'
 #' @return ICCier summary object. List containing:

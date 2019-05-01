@@ -9,8 +9,6 @@
 \arguments{
 \item{object}{An ICCier object.}
 
-\item{prob}{Probability interval (default: .95)}
-
 \item{...}{Currently not used.}
 }
 \value{
