@@ -11,7 +11,9 @@ ICCier(formula, data, ...)
 
 \item{data}{Data frame containing all variables.}
 
-\item{...}{Arguments passed to \code{\link[rstan]{sampling}}.}
+\item{...}{Arguments passed to \code{\link[rstan]{sampling}}.
+By default, \code{sampling} is called with \code{chains=4,iter=2000,adapt_delta=.95,init=0}.
+If \code{options('mc.cores')} is defined, then \code{cores=getOption("mc.cores")}; otherwise all detected cores are used.}
 }
 \value{
 ICCier object. List containing the model formula, data, stan_data, model fit, and mapping between original ID and numeric ID.

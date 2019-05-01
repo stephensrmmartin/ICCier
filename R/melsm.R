@@ -25,29 +25,47 @@
 #' @param formula Formula representing the model. See details.
 #' @param data Data frame containing all variables.
 #' @param ... Arguments passed to \code{\link[rstan]{sampling}}.
+#' By default, \code{sampling} is called with \code{chains=4,iter=2000,adapt_delta=.95,init=0}.
+#' If \code{options('mc.cores')} is defined, then \code{cores=getOption("mc.cores")}; otherwise all detected cores are used.
 #'
 #' @return ICCier object. List containing the model formula, data, stan_data, model fit, and mapping between original ID and numeric ID.
+#' @importFrom parallel detectCores
 #' @export
 #'
 ICCier <- function(formula, data, ...){
+  # Sane defaults
   dots <- list(...)
-  # if(is.null(dots$control)){
-  #   dots$control <- list(adapt_delta=.95)
-  # }
+  if(is.null(dots$control)){
+    dots$control <- list(adapt_delta=.95)
+  }
+  if(is.null(dots$control$adapt_delta)){
+    dots$control$adapt_delta = .95
+  }
+  if(is.null(dots$init)){
+    dots$init <- 0
+  }
+  if(is.null(dots$cores)){
+    cores <- getOption('mc.cores')
+    if(is.null(cores)){
+      dots$cores <- parallel::detectCores()
+    }
+  }
+  if(is.null(dots$chains)){
+    dots$chains <- 4
+  }
 
   d <- .parse_formula(formula, data)
-  # args <- list(object=stanmodels$melsmICC, data=d$stan_data,
-  #           pars = c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega'),
-  #           unlist(dots),...)
-  # stanOut <- do.call('sampling',args=args)
-  stanOut <- rstan::sampling(stanmodels$melsmICC,data=d$stan_data,pars=c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega'),...)
+  args <- c(list(object=stanmodels$melsmICC, data=d$stan_data,
+            pars = c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega')),
+            dots)
+  stanOut <- do.call('sampling',args=args)
+  # stanOut <- rstan::sampling(stanmodels$melsmICC,data=d$stan_data,pars=c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega'),...)
   out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map)
   diagnostics <- .get_diagnostics(out)
   out$diagnostics <- diagnostics
   class(out) <- c('ICCier')
   return(out)
 }
-##TODO: Change above to allow default adapt_delta. Uncommenting doesn't work, because nothing else is passed to do.call, and rstan throws a hissy fit.
 
 #' Parses formula using Formula.
 #'
