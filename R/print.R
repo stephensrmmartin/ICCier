@@ -124,7 +124,7 @@ print.summary.ICCier <- function(object,...){
   # colnames(object$ci$L$omega) <- rep(paste0((1-object$prob)/2*100,'%'),ncol(object$ci$L$omega))
   # colnames(object$ci$U$omega) <- rep(paste0((1 - (1-object$prob)/2)*100,'%'),ncol(object$ci$U$omega))
 
-  beta.sum <- unname(cbind(format(round(object$estimate$beta,digits),...),paste0('[',format(round(object$ci$L$beta,digits),...),' ',format(round(object$ci$U$beta,digits),...),']')))
+  beta.sum <- cbind(format(round(object$estimate$beta,digits),...),paste0('[',format(round(object$ci$L$beta,digits),...),' ',format(round(object$ci$U$beta,digits),...),']'))
   colnames(beta.sum) <- c('',paste0(object$prob*100,'%'))
   rownames(beta.sum) <- ''
 
