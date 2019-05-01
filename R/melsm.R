@@ -138,7 +138,7 @@ ICCier <- function(formula, data, ...){
 .get_diagnostics <- function(object){
   rhats <- rstan::summary(object$fit,pars=c('beta0','gamma','eta','mu_group','gamma_group'))$summary[,'Rhat']
 
-  n_effs <- rstan::summary(object$fit,pars=c('beta0','gamma','eta','mu_group','gamma_group','icc'))$summary[,'n_eff']
+  n_effs <- rstan::summary(object$fit,pars=c('beta0','gamma','eta','mu_group','gamma_group'))$summary[,'n_eff']
 
   div <- rstan::get_num_divergent(object$fit)
 
