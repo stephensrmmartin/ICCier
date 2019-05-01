@@ -62,14 +62,17 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   if(summary){
     L <- (1-prob)/2
     U <- 1 - L
-    out <- cbind(mean=colMeans(out),t(apply(out,2,function(x){
+    out <- as.data.frame(cbind(mean=colMeans(out),t(apply(out,2,function(x){
       quantile(x,probs=c(L,U))
-    })))
+    }))))
+    if(inc_group & grouping_available){
+      out[,fnames$grouping] <- newdata[,fnames$grouping]
+      out[out[,fnames$grouping] == magic_NA,fnames$grouping] <- NA
+    }
   }
   return(out)
 
 }
-# TODO: Add back the groups if inc_group is TRUE. Can do this from the fed-in data.
 
 #' Extracts random effect samples.
 #'
