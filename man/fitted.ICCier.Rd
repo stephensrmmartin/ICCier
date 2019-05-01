@@ -19,7 +19,7 @@
 \item{...}{Not currently used.}
 }
 \value{
-If \code{summary=TRUE}, then the mean and \code{prob}% intervals are returned for each observation in the model frame.
+If \code{summary=TRUE}, then the mean and \code{prob}\% intervals are returned for each observation in the model frame.
 If \code{summary=FALSE}, an S by N matrix containing the S posterior samples for N observations.
 }
 \description{

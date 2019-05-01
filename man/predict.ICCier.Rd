@@ -8,7 +8,7 @@
   summary = TRUE, prob = 0.95, inc_group = TRUE, ...)
 }
 \arguments{
-\item{object}{ICCier object}
+\item{object}{ICCier object.}
 
 \item{newdata}{Data to predict from. If NULL, calls \code{\link{fitted.ICCier}} on fit data.}
 
@@ -23,8 +23,22 @@
 \item{...}{Not currently used.}
 }
 \value{
-TBD
+If \code{summary=TRUE}, then the mean and \code{prob}\% intervals are returned for each observation in the model frame.
+If \code{summary=FALSE}, an S by N matrix containing the S posterior samples for N observations.
 }
 \description{
-ICCier method to predict new ICC values.
+Predicts new ICC values.
+}
+\details{
+If the grouping variable column is not included in \code{newdata}, then \code{predict} only predicts
+from the fixed values.
+This is \emph{not recommended}.
+If the grouping variable column is present in \code{newdata}, but a value is either \code{NA} or not previously fit,
+then \code{predict} marginalizes over the entire random effects distribution.
+Finally, if the grouping variable is present and known, then \code{predict} marginalizes over the
+uncertainty in that person's (standardized, orthogonalized) random effects.
+
+We recommend including the grouping column, even if the grouping identifier for the predicted case
+is unknown. This ensures that uncertainty in the predicted ICC includes the uncertainty of that
+case's random effects.
 }

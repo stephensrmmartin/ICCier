@@ -1,13 +1,27 @@
 #' ICCier method to predict new ICC values.
 #'
-#' @param object ICCier object
+#' Predicts new ICC values.
+#'
+#' If the grouping variable column is not included in \code{newdata}, then \code{predict} only predicts
+#' from the fixed values.
+#' This is \emph{not recommended}.
+#' If the grouping variable column is present in \code{newdata}, but a value is either \code{NA} or not previously fit,
+#' then \code{predict} marginalizes over the entire random effects distribution.
+#' Finally, if the grouping variable is present and known, then \code{predict} marginalizes over the
+#' uncertainty in that person's (standardized, orthogonalized) random effects.
+#'
+#' We recommend including the grouping column, even if the grouping identifier for the predicted case
+#' is unknown. This ensures that uncertainty in the predicted ICC includes the uncertainty of that
+#' case's random effects.
+#'
+#' @param object ICCier object.
 #' @param newdata Data to predict from. If NULL, calls \code{\link{fitted.ICCier}} on fit data.
 #' @param draws Number of draws to use from posterior samples for prediction. Default: All of them.
 #' @inheritParams fitted.ICCier
 #' @param ... Not currently used.
 #' @importFrom mvtnorm rmvnorm
 #'
-#' @return TBD
+#' @inherit fitted.ICCier return
 #' @export
 #'
 predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.95,inc_group=TRUE, ...){
@@ -193,7 +207,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 #' @param inc_group Logical. Whether to include the grouping variable with the estimates.
 #' @param ... Not currently used.
 #'
-#' @return If \code{summary=TRUE}, then the mean and \code{prob}% intervals are returned for each observation in the model frame.
+#' @return If \code{summary=TRUE}, then the mean and \code{prob}\% intervals are returned for each observation in the model frame.
 #' If \code{summary=FALSE}, an S by N matrix containing the S posterior samples for N observations.
 #' @export
 #'
