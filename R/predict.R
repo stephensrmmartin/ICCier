@@ -36,7 +36,26 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 
   samps <- .extract_transform(object,draws)
   dat <- .parse_formula(object$formula,newdata,predict=TRUE)
-  dat
+  samps.pred <- sapply(1:nrow(dat$stan_data$x_sca_l1),FUN = function(i){
+    sapply(1:draws, function(s){
+      sds <- as.vector(exp(dat$stan_data$x_sca_l2[i,,drop=FALSE] %*% samps$eta[,,s]))
+      sds.diag <- diag(sds,length(sds),length(sds))
+      var.mu <- sds[1]^2
+      gamma_group <- dat$stan_data$x_sca_l2[i,,drop=FALSE] %*% samps$gamma[,,s]
+      if(grouping_available){
+        if(group_known[i]){
+          group_numeric_i <- object$group_map$group_L2[object$group_map$group_L2[,1] == dat$group_map$group_L1[i,1], 'group_numeric']
+          gamma_group <- gamma_group + (samps$random_z[,,s][group_numeric_i,,drop=FALSE] %*% t(sds.diag%*%t(chol(samps$Omega[,,s]))))[-1]
+        } else {
+          gamma_group <- gamma_group + mvtnorm::rmvnorm(1,sigma=sds.diag%*%samps$Omega[,,s]%*%sds.diag)[-1]
+        }
+      }
+      shat <- exp(dat$stan_data$x_sca_l1[i,,drop=FALSE] %*% t(gamma_group))
+      icc <- var.mu / (var.mu + shat^2)
+      icc
+    })
+  })
+  return(samps.pred)
 
 }
 # TODO: Needs to handle existing (known) groups as well as unknown.
@@ -148,7 +167,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   P_l2 <- object$stan_data$P_l2
   P_l1 <- object$stan_data$P_l1
   # Only these are needed for predicting ICC
-  samps <- as.matrix(object$fit, pars = c('gamma','eta','gamma_group','Omega'))[1:draws,]
+  samps <- as.matrix(object$fit, pars = c('gamma','eta','Omega'))[1:draws,]
   gamma.cols <- grep('gamma.*',colnames(samps),value = TRUE)
   eta.cols <- grep('eta.*',colnames(samps),value = TRUE)
   gamma_group.cols <- grep('gamma_group.*',colnames(samps),value = TRUE)
@@ -159,8 +178,8 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + 1,P_l1 + 1,draws))
   # gamma_group <- array(t(samps[,gamma_group.cols]),dim=c(K,P_l1,draws))
   # gamma_random <- .get_random_effect_samples(object,draws)$gamma_random
-  gamma_random_z <- .get_random_effect_z_samples(object,draws)[,2:(P_l1 + 1),,drop=FALSE]
-  return(mget(c('gamma','eta','gamma_random_z','Omega')))
+  random_z <- .get_random_effect_z_samples(object,draws)
+  return(mget(c('gamma','eta','random_z','Omega')))
 }
 
 #' ICCier method to extract ICC values.
