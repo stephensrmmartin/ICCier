@@ -4,7 +4,7 @@
 #' Summaries of parameter estimates and MCMC convergence diagnostics.
 #'
 #' @param object An ICCier object.
-#' @inheritParams posterior_interval
+#' @inheritParams posterior_interval.ICCier
 #' @param ... Currently not used.
 #'
 #' @return ICCier summary object. List containing:

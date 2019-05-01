@@ -9,6 +9,8 @@
 \arguments{
 \item{object}{An ICCier object.}
 
+\item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
+
 \item{...}{Currently not used.}
 }
 \value{
