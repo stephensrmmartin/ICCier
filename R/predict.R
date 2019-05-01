@@ -27,12 +27,12 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   if(!(fnames$grouping %in% colnames(newdata))){
     grouping_available <- FALSE
     message('No grouping variable. Using fixef only.')
-    newdata[,fnames$grouping] <- paste0(magic_ignore,1:nrow(newdata))
+    newdata[,fnames$grouping] <- magic_ignore
   } else{
     grouping_available <- TRUE
-    newdata[is.na(newdata[,fnames$grouping]),fnames$grouping] <- paste0(magic_NA,1:sum(is.na(newdata[,fnames$grouping])))
+    group_known <- newdata[,fnames$grouping] %in% object$group_map$group_L2[,fnames$grouping]
+    newdata[!group_known,fnames$grouping] <- magic_NA
   }
-  group_known <- newdata[,fnames$grouping] %in% object$data[,fnames$grouping]
 
   samps <- .extract_transform(object,draws)
   dat <- .parse_formula(object$formula,newdata,predict=TRUE)

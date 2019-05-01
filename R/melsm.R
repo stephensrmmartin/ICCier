@@ -74,6 +74,7 @@ ICCier <- function(formula, data, ...){
   fnames <- attr(terms(f),'term.labels')
 
   if(predict){
+    # No outcome
     mf <- model.frame(f,data,na.action='na.omit',lhs=2)
   } else {
     mf <- model.frame(f, data,na.action='na.omit')
@@ -95,10 +96,16 @@ ICCier <- function(formula, data, ...){
   x_sca_l1 <- model.matrix(f, mf, rhs=1)
   P_l1 <- ncol(x_sca_l1)
 
-  x_sca_l2.mf <- model.frame(f,mf,lhs=2,rhs=2)
-  x_sca_l2 <- as.data.frame(do.call(rbind,lapply(split(x_sca_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
-  x_sca_l2 <- x_sca_l2[order(x_sca_l2[,1]),-1,drop=FALSE]
-  x_sca_l2 <- model.matrix(f,x_sca_l2,rhs=2)
+  if(predict){
+    # Leave matrix as-is for prediction.
+    x_sca_l2 <- model.matrix(f,mf,rhs=2)
+    group$group_L2 <- group$group_L1
+  } else {
+    x_sca_l2.mf <- model.frame(f,mf,lhs=2,rhs=2)
+    x_sca_l2 <- as.data.frame(do.call(rbind,lapply(split(x_sca_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
+    x_sca_l2 <- x_sca_l2[order(x_sca_l2[,1]),-1,drop=FALSE]
+    x_sca_l2 <- model.matrix(f,x_sca_l2,rhs=2)
+  }
   P_l2 <- ncol(x_sca_l2)
 
   if(predict){
