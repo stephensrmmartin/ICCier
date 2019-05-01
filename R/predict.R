@@ -69,15 +69,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   return(out)
 
 }
-# TODO: Needs to handle existing (known) groups as well as unknown.
-# If known, pull from the group_map which integer they belong to.
-# If unknown, assign a value, then randomly draw from RE distribution(s) instead on each iteration.
-# If no groups specified, just use fixed effects, b/c there's no other information available.
-# Remember: You only need to predict ICC = var(mean)/(var(mean) + var(within)) for each row, across samples.
-# TODO: Actually, you need random_z for known groups. random includes the effect of eta already; so to ...
-# predict new values, you need var(within) ~~ x_sca_l1%*%t(predicted_gamma + u_gammas), and u_gammas ...
-# ~ MVN(0, Sigma(eta,x_sca_l2)). B/c x_sca_l2 can differ, we need _z separated out, predict new RE SDs, then ...
-# create new Sigma.
+# TODO: Add back the groups if inc_group is TRUE. Can do this from the fed-in data.
 
 #' Extracts random effect samples.
 #'
@@ -124,7 +116,6 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 
   list(mu_random = group_mu_random, gamma_random = group_gamma_random)
 }
-# TODO: Will need to compute the actual random effects, not just gamma_group. Can always take samps and subtract off rather than reworking everything else.
 
 #' Extract standardized RE
 #'
