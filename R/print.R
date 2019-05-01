@@ -111,13 +111,16 @@ print.summary.ICCier <- function(object,...){
   # colnames(object$ci$L$omega) <- rep(paste0((1-object$prob)/2*100,'%'),ncol(object$ci$L$omega))
   # colnames(object$ci$U$omega) <- rep(paste0((1 - (1-object$prob)/2)*100,'%'),ncol(object$ci$U$omega))
 
-  beta.sum <- unname(c(format(object$estimate$beta,...),paste0('[',format(object$ci$L$beta,...),' ',format(object$ci$U$beta,...),']')))
-  eta.sum <- cbind(format(object$estimate$eta,...),matrix(paste0('[',format(object$ci$L$eta,...),' ',format(object$ci$U$eta,...),']'),nrow=nrow(object$estimate$eta)))
+  beta.sum <- unname(cbind(format(object$estimate$beta,...),paste0('[',format(object$ci$L$beta,...),' ',format(object$ci$U$beta,...),']')))
+  colnames(beta.sum) <- c('',paste0(object$prob*100,'%'))
+  rownames(beta.sum) <- ''
+
   gamma.sum <- cbind(format(object$estimate$gamma,...),matrix(paste0('[',format(object$ci$L$gamma,...),' ',format(object$ci$U$gamma,...),']'),nrow=nrow(object$estimate$gamma)))
-  names(beta.sum) <- c('',paste0(object$prob*100,'%'))
-  colnames(eta.sum)[colnames(eta.sum) == ''] <- paste0(object$prob*100,'%')
   colnames(gamma.sum)[colnames(gamma.sum) == ''] <- paste0(object$prob*100,'%')
   names(dimnames(gamma.sum)) <- names(dimnames(object$estimate$gamma))
+
+  eta.sum <- cbind(format(object$estimate$eta,...),matrix(paste0('[',format(object$ci$L$eta,...),' ',format(object$ci$U$eta,...),']'),nrow=nrow(object$estimate$eta)))
+  colnames(eta.sum)[colnames(eta.sum) == ''] <- paste0(object$prob*100,'%')
   names(dimnames(eta.sum)) <- names(dimnames(object$estimate$eta))
 
   cat('Coefficients:','\n\n')
