@@ -37,7 +37,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 
   samps <- .extract_transform(object,draws)
   dat <- .parse_formula(object$formula,newdata,predict=TRUE)
-  samps.pred <- sapply(1:nrow(dat$stan_data$x_sca_l1),FUN = function(i){ # Each row
+  out <- sapply(1:nrow(dat$stan_data$x_sca_l1),FUN = function(i){ # Each row
     sapply(1:draws, function(s){ # Each posterior sample
       sds <- as.vector(exp(dat$stan_data$x_sca_l2[i,,drop=FALSE] %*% samps$eta[,,s]))
       sds.diag <- diag(sds,length(sds),length(sds))
@@ -58,7 +58,15 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
       icc
     })
   })
-  return(samps.pred)
+  colnames(out) <- paste0('icc[',1:nrow(newdata),']')
+  if(summary){
+    L <- (1-prob)/2
+    U <- 1 - L
+    out <- cbind(mean=colMeans(out),t(apply(out,2,function(x){
+      quantile(x,probs=c(L,U))
+    })))
+  }
+  return(out)
 
 }
 # TODO: Needs to handle existing (known) groups as well as unknown.
