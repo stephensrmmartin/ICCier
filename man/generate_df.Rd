@@ -20,7 +20,7 @@ generate_df(n, K, beta, gamma, eta, cor_structure)
 \item{cor_structure}{cor_structure}
 }
 \value{
-
+...
 }
 \description{
 Uses same as \code{\link{datagen}}, but outputs a data frame.

@@ -12,7 +12,7 @@
 #' @importFrom mvtnorm rmvnorm
 #' @importFrom Matrix forceSymmetric
 #'
-#' @return
+#' @return ...
 #'
 #' @keywords internal
 datagen <- function(n,K,beta,gamma,eta,cor_structure){
@@ -86,7 +86,7 @@ datagen <- function(n,K,beta,gamma,eta,cor_structure){
 #' @param eta eta
 #' @param cor_structure cor_structure
 #'
-#' @return
+#' @return ...
 #'
 #' @keywords internal
 generate_df <- function(n,K,beta,gamma,eta,cor_structure){

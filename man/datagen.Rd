@@ -20,7 +20,7 @@ datagen(n, K, beta, gamma, eta, cor_structure)
 \item{cor_structure}{3-length vector describing the correlation matrix of random effects.}
 }
 \value{
-
+...
 }
 \description{
 Generates data for use in testing.
