@@ -80,9 +80,9 @@ print.ICCier <- function(object,...){
 
   cat('Coefficients:','\n')
   cat('Mean: \t',format(.get_beta(object)$mu,...),'\n\n')
-  cat('L1 Scale: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
-  cat('L2 Scale: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
-  cat('L1 Cor: \n'); print(.get_omega(object)$omega,...); cat('\n')
+  cat('Within-person Variance: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
+  cat('Between-person Variance: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
+  cat('Random Effect Correlations: \n'); print(.get_omega(object)$omega,...); cat('\n')
 
   invisible(object)
 }
@@ -117,12 +117,14 @@ print.summary.ICCier <- function(object,...){
   names(beta.sum) <- c('',paste0(object$prob*100,'%'))
   colnames(eta.sum)[colnames(eta.sum) == ''] <- paste0(object$prob*100,'%')
   colnames(gamma.sum)[colnames(gamma.sum) == ''] <- paste0(object$prob*100,'%')
+  names(dimnames(gamma.sum)) <- names(dimnames(object$estimate$gamma))
+  names(dimnames(eta.sum)) <- names(dimnames(object$estimate$eta))
 
   cat('Coefficients:','\n\n')
   cat('Mean: \n');print(beta.sum,quote=FALSE,...);cat('\n')
-  cat('L1 Scale: \n'); print(gamma.sum,quote=FALSE); cat('\n')
-  cat('L2 Scale: \n'); print(eta.sum,quote=FALSE); cat('\n')
-  cat('L1 Cor: \n'); print(object$estimate$omega,...); cat('\n')
+  cat('Within-person Variance: \n'); print(gamma.sum,quote=FALSE); cat('\n')
+  cat('Between-person Variance: \n'); print(eta.sum,quote=FALSE); cat('\n')
+  cat('Random Effect Correlations: \n'); print(object$estimate$omega,...); cat('\n')
 
   invisible(object)
 }
@@ -168,6 +170,7 @@ print.summary.ICCier <- function(object,...){
 
   rownames(gamma) <- rownames(gamma.L) <- rownames(gamma.U) <- fnames$l2
   colnames(gamma) <- colnames(gamma.L) <- colnames(gamma.U) <- fnames$l1
+  names(dimnames(gamma)) <- names(dimnames(gamma.L)) <- names(dimnames(gamma.U)) <- c('Level 2','Level 1')
 
   colnames(gamma_group) <- colnames(gamma_group.L) <- colnames(gamma_group.U) <- fnames$l1
 
@@ -188,7 +191,8 @@ print.summary.ICCier <- function(object,...){
   eta.U <- matrix(eta.ci[,2],nrow=P_l2)
 
   rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$l2
-  colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c('(Intercept.L)',fnames$l1)
+  colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c('Mean',fnames$l1)
+  names(dimnames(eta)) <- names(dimnames(eta.L)) <- names(dimnames(eta.U)) <- c('Level 2','')
 
   out <- mget(c('eta','eta.L','eta.U'))
 
@@ -205,7 +209,7 @@ print.summary.ICCier <- function(object,...){
   omega.L <- matrix(omega.ci[,1],D)
   omega.U <- matrix(omega.ci[,2],D)
 
-  rownames(omega) <- colnames(omega) <- rownames(omega.L) <- colnames(omega.L) <-rownames(omega.U) <- colnames(omega.U) <- c('(Intercept.L)',fnames$l1)
+  rownames(omega) <- colnames(omega) <- rownames(omega.L) <- colnames(omega.L) <-rownames(omega.U) <- colnames(omega.U) <- c('Mean',fnames$l1)
 
   out <- mget(c('omega','omega.L','omega.U'))
 

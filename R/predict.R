@@ -114,7 +114,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   },simplify = 'array')
   group_gamma_random <- array(group_gamma_random,dim=c(K,P_l1,draws))
 
-  colnames(group_mu_random) <- '(Intercept.L)'
+  colnames(group_mu_random) <- 'Mean'
   colnames(group_gamma_random) <- colnames(object$stan_data$x_sca_l1)
 
   list(mu_random = group_mu_random, gamma_random = group_gamma_random)
