@@ -17,7 +17,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   if(is.null(data)){
    return(fitted(object,summary,prob,inc_group))
   }
-  total_iter <- (object$fit@sim$iter - object$fit@sim$warmup)*object$fit@sim$chains
+  total_iter <- nsamples(object)
   if(is.null(draws)){
     draws <- total_iter
   }
@@ -85,7 +85,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 #' @return Samples of RE matrices: Arrays with dimensions KxP_l1xdraws.
 .get_random_effect_samples <- function(object,draws=NULL){
   if(is.null(draws)){
-    draws <- (object$fit@sim$iter - object$fit@sim$warmup)*object$fit@sim$chains
+    draws <- nsamples(object)
   }
   K <- object$stan_data$K
   P_l1 <- object$stan_data$P_l1
@@ -131,7 +131,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 #'
 .get_random_effect_z_samples <- function(object,draws=NULL){
   if(is.null(draws)){
-    draws <- (object$fit@sim$iter - object$fit@sim$warmup)*object$fit@sim$chains
+    draws <- nsamples(object)
   }
   rand_samps <- .get_random_effect_samples(object,draws)
   samps <- sapply(1:draws,function(x){cbind(rand_samps$mu_random[,,x],rand_samps$gamma_random[,,x])},simplify='array')

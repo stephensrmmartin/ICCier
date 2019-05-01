@@ -42,8 +42,8 @@ log_lik.ICCier <- function(object,...){
 #' @export
 #' @keywords internal
 nsamples.ICCier <- function(object, ...){
-  samps <- as.matrix(object$fit,pars='lp__')
-  return(nrow(samps))
+  n.samps <- (object$fit@sim$iter - object$fit@sim$warmup)*object$fit@sim$chains
+  return(n.samps)
 }
 
 #' LOO method for computing leave-one-out (LOO).
