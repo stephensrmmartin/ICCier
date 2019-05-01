@@ -18,6 +18,13 @@
 #' @export
 #'
 summary.ICCier <- function(object,prob=.95,...){
+  dots <- list(...)
+  if(is.null(dots$digits)){
+    digits <- 3
+  } else {
+    digits <- dots$digits
+    dots$digits <- NULL
+  }
   beta <- .get_beta(object,prob,...)
   gamma <- .get_gamma(object,prob,...)
   eta <- .get_eta(object,prob,...)
@@ -31,7 +38,7 @@ summary.ICCier <- function(object,prob=.95,...){
   iter$total <- iter$post*chains
   K <- object$stan_data$K
   N <- object$stan_data$N
-  meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K)
+  meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K,digits=digits)
 
   estimate <- list(beta = beta$mu,
                 gamma = t(gamma$gamma),
@@ -97,6 +104,12 @@ print.ICCier <- function(object,...){
 #'
 print.summary.ICCier <- function(object,...){
 
+  dots <- list(...)
+  digits <- dots$digits
+  if(is.null(digits)){
+    digits <- object$meta$digits
+  }
+
   cat('Formula:',deparse(object$formula),'\n')
   cat('Number of observations:', object$meta$N,'\n')
   cat('Number of groups:',object$meta$K,'\n')
@@ -111,15 +124,25 @@ print.summary.ICCier <- function(object,...){
   # colnames(object$ci$L$omega) <- rep(paste0((1-object$prob)/2*100,'%'),ncol(object$ci$L$omega))
   # colnames(object$ci$U$omega) <- rep(paste0((1 - (1-object$prob)/2)*100,'%'),ncol(object$ci$U$omega))
 
-  beta.sum <- unname(cbind(format(object$estimate$beta,...),paste0('[',format(object$ci$L$beta,...),' ',format(object$ci$U$beta,...),']')))
+  beta.sum <- unname(cbind(format(round(object$estimate$beta,digits),...),paste0('[',format(round(object$ci$L$beta,digits),...),' ',format(round(object$ci$U$beta,digits),...),']')))
   colnames(beta.sum) <- c('',paste0(object$prob*100,'%'))
   rownames(beta.sum) <- ''
 
-  gamma.sum <- cbind(format(object$estimate$gamma,...),matrix(paste0('[',format(object$ci$L$gamma,...),' ',format(object$ci$U$gamma,...),']'),nrow=nrow(object$estimate$gamma)))
+  gamma.sum <- cbind(format(round(object$estimate$gamma,digits),...),
+                     matrix(paste0('[',format(round(object$ci$L$gamma,digits),...),
+                                   ' ',
+                                   format(round(object$ci$U$gamma,digits),...),
+                                   ']'),
+                            nrow=nrow(object$estimate$gamma)))
   colnames(gamma.sum)[colnames(gamma.sum) == ''] <- paste0(object$prob*100,'%')
   names(dimnames(gamma.sum)) <- names(dimnames(object$estimate$gamma))
 
-  eta.sum <- cbind(format(object$estimate$eta,...),matrix(paste0('[',format(object$ci$L$eta,...),' ',format(object$ci$U$eta,...),']'),nrow=nrow(object$estimate$eta)))
+  eta.sum <- cbind(format(round(object$estimate$eta,digits),...),
+                   matrix(paste0('[',format(round(object$ci$L$eta,digits),...),
+                                 ' ',
+                                 format(round(object$ci$U$eta,digits),...),
+                                 ']'),
+                          nrow=nrow(object$estimate$eta)))
   colnames(eta.sum)[colnames(eta.sum) == ''] <- paste0(object$prob*100,'%')
   names(dimnames(eta.sum)) <- names(dimnames(object$estimate$eta))
 
@@ -127,11 +150,10 @@ print.summary.ICCier <- function(object,...){
   cat('Mean: \n');print(beta.sum,quote=FALSE,...);cat('\n')
   cat('Within-person Variance: \n'); print(gamma.sum,quote=FALSE); cat('\n')
   cat('Between-person Variance: \n'); print(eta.sum,quote=FALSE); cat('\n')
-  cat('Random Effect Correlations: \n'); print(object$estimate$omega,...); cat('\n')
+  cat('Random Effect Correlations: \n'); print(round(object$estimate$omega,digits),...); cat('\n')
 
   invisible(object)
 }
-## TODO: Add digits to summary() as undocumented parameter. Store in meta. Pull into print, so can just run summary(object,digits=2).
 ## TODO: Add option to extract gamma_group and beta_group. Not in summary, but in coef().
 
 .get_beta <- function(object,prob=.95,...){
