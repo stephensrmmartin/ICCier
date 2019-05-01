@@ -59,7 +59,6 @@ ICCier <- function(formula, data, ...){
             pars = c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega')),
             dots)
   stanOut <- do.call('sampling',args=args)
-  # stanOut <- rstan::sampling(stanmodels$melsmICC,data=d$stan_data,pars=c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega'),...)
   out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map)
   diagnostics <- .get_diagnostics(out)
   out$diagnostics <- diagnostics
@@ -144,7 +143,6 @@ ICCier <- function(formula, data, ...){
   div <- rstan::get_num_divergent(object$fit)
 
   tree.max <- rstan::get_num_max_treedepth(object$fit)
-  # tree <- rstan::get_max_treedepth_iterations(object$fit)
 
   bfmi <- rstan::get_bfmi(object$fit)
 

@@ -181,8 +181,6 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   gamma <- array(t(samps[,gamma.cols]),dim=c(P_l2,P_l1,draws))
   eta <- array(t(samps[,eta.cols]),dim=c(P_l2,P_l1 + 1,draws))
   Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + 1,P_l1 + 1,draws))
-  # gamma_group <- array(t(samps[,gamma_group.cols]),dim=c(K,P_l1,draws))
-  # gamma_random <- .get_random_effect_samples(object,draws)$gamma_random
   random_z <- .get_random_effect_z_samples(object,draws)
   return(mget(c('gamma','eta','random_z','Omega')))
 }
