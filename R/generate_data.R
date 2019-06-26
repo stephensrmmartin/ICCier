@@ -97,8 +97,10 @@ generate_df <- function(n,K,beta,gamma,eta,cor_structure){
 
 convert_datagen <- function(d){
   ds <- data.frame(y=d$data$y,x_L1=d$data$x_sca_l1,group=d$data$group)
-  for(n in 1:d$data$K){
-    ds[ds$group == n,paste0('x_L2.',1:(d$meta$Q - 1))] <- d$data$x_sca_l2[n,-1]
+  if(d$meta$Q > 1){
+    for(n in 1:d$data$K){
+      ds[ds$group == n,paste0('x_L2.',1:(d$meta$Q - 1))] <- d$data$x_sca_l2[n,-1]
+    }
   }
   return(ds)
 }
