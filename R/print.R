@@ -29,6 +29,8 @@ summary.ICCier <- function(object,prob=.95,...){
   gamma <- .get_gamma(object,prob,...)
   eta <- .get_eta(object,prob,...)
   omega <- .get_omega(object,prob,...)
+  icc_mean <- .get_icc_mean(object,prob,...)
+  icc_sd <- .get_icc_sd(object,prob,...)
   prob <- prob
   formula <- object$formula
 
@@ -45,21 +47,27 @@ summary.ICCier <- function(object,prob=.95,...){
                 eta = t(eta$eta),
                 omega=omega$omega,
                 beta_group = beta$beta_group,
-                gamma_group = gamma$gamma_group
+                gamma_group = gamma$gamma_group,
+                icc_mean = icc_mean$icc_mean,
+                icc_sd = icc_sd$icc_sd
                 )
   ci.L <- list(beta = beta$mu.L,
                 gamma = t(gamma$gamma.L),
                 eta = t(eta$eta.L),
                 omega=omega$omega.L,
                 beta_group = beta$beta_group.L,
-                gamma_group = gamma$gamma_group.L
+                gamma_group = gamma$gamma_group.L,
+                icc_mean = icc_mean$icc_mean.L,
+                icc_sd = icc_sd$icc_sd.L
                 )
   ci.U <- list(beta = beta$mu.U,
                 gamma = t(gamma$gamma.U),
                 eta = t(eta$eta.U),
                 omega=omega$omega.U,
                 beta_group = beta$beta_group.U,
-                gamma_group = gamma$gamma_group.U
+                gamma_group = gamma$gamma_group.U,
+                icc_mean = icc_mean$icc_mean.U,
+                icc_sd = icc_sd$icc_sd.U
                 )
   ci <- list(L=ci.L, U=ci.U)
 
@@ -139,6 +147,15 @@ print.summary.ICCier <- function(object,...){
   colnames(eta.sum)[colnames(eta.sum) == ''] <- paste0(object$prob*100,'%')
   names(dimnames(eta.sum)) <- names(dimnames(object$estimate$eta))
 
+  icc.sum <- cbind(format(round(c(object$estimate$icc_mean,object$estimate$icc_sd),digits)),
+                   paste0('[',format(round(c(object$ci$L$icc_mean,object$ci$L$icc_sd),digits)),' ',
+                          format(round(c(object$ci$U$icc_mean,object$ci$U$icc_sd),digits)),']'))
+  colnames(icc.sum) <- c('',paste0(object$prob*100,'%'))
+  rownames(icc.sum) <- c('Mean','SD')
+
+
+  cat('ICC Summary:','\n'); print(icc.sum,quote=FALSE)
+  cat('\n--------------------\n')
   cat('Coefficients:','\n\n')
   cat('Mean: \n');print(beta.sum,quote=FALSE,...);cat('\n')
   cat('Within-person Variance: \n'); print(gamma.sum,quote=FALSE); cat('\n')
@@ -233,6 +250,24 @@ print.summary.ICCier <- function(object,...){
 
   return(out)
 
+}
+
+.get_icc_mean <- function(object,prob=.95,...){
+  icc_mean <- .posterior_mean(object,'icc_mean')
+  icc_mean.ci <- posterior_interval(object,prob=prob,pars='icc_mean')
+  icc_mean.L <- icc_mean.ci[1]
+  icc_mean.U <- icc_mean.ci[2]
+  out <- mget(c('icc_mean','icc_mean.L','icc_mean.U'))
+  return(out)
+
+}
+.get_icc_sd <- function(object, prob=.95,...){
+  icc_sd <- .posterior_mean(object,'icc_sd')
+  icc_sd.ci <- posterior_interval(object,prob=prob,pars='icc_sd')
+  icc_sd.L <- icc_sd.ci[1]
+  icc_sd.U <- icc_sd.ci[2]
+  out <- mget(c('icc_sd','icc_sd.L','icc_sd.U'))
+  return(out)
 }
 
 .posterior_mean <- function(object,pars){

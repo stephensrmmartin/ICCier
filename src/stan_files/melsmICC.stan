@@ -66,6 +66,8 @@ model {
 generated quantities {
   vector[N] icc = ICC(mu_gamma_group_random_sd[group,1], shat);
   vector[N] log_lik;
+  real icc_mean = mean(icc);
+  real icc_sd = sd(icc);
   corr_matrix[P_l1 + 1] Omega = multiply_lower_tri_self_transpose(mu_gamma_group_random_cor_L);
   {
     for(n in 1:N){
