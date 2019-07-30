@@ -18,13 +18,14 @@
 #' @param newdata Data to predict from. If NULL, calls \code{\link{fitted.ICCier}} on fit data.
 #' @param draws Number of draws to use from posterior samples for prediction. Default: All of them.
 #' @inheritParams fitted.ICCier
+#' @param occasion Default: NULL. Vector representing the occasion number. One value per row in newdata. For estimating composite score reliability. If unspecified, set to NULL (default), and raw score ICCs are estimated.
 #' @param ... Not currently used.
 #' @importFrom mvtnorm rmvnorm
 #'
 #' @inherit fitted.ICCier return
 #' @export
 #'
-predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.95,inc_group=TRUE, ...){
+predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.95,inc_group=TRUE,occasion=NULL, ...){
   fnames <- .get_formula_names(object)
   magic_NA <- 'NA_ICCier'
   magic_ignore <- 'Ignore_ICCier'
@@ -68,7 +69,11 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
         }
       }
       shat <- exp(dat$stan_data$x_sca_l1[i,,drop=FALSE] %*% t(gamma_group))
-      icc <- var.mu / (var.mu + shat^2)
+      if(!is.null(occasion)){ # Composite/avg score ICC
+        icc <- var.mu / (var.mu + shat^2/observation[i])
+      } else { # Raw score ICC
+        icc <- var.mu / (var.mu + shat^2)
+      }
       icc
     })
   })
