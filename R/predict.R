@@ -70,7 +70,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
       }
       shat <- exp(dat$stan_data$x_sca_l1[i,,drop=FALSE] %*% t(gamma_group))
       if(!is.null(occasion)){ # Composite/avg score ICC
-        icc <- var.mu / (var.mu + shat^2/observation[i])
+        icc <- var.mu / (var.mu + shat^2/occasion[i])
       } else { # Raw score ICC
         icc <- var.mu / (var.mu + shat^2)
       }
