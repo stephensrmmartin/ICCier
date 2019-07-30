@@ -5,7 +5,7 @@
 \title{ICCier method to extract ICC values.}
 \usage{
 \method{fitted}{ICCier}(object, summary = TRUE, prob = 0.95,
-  inc_group = TRUE)
+  inc_group = TRUE, occasion = NULL)
 }
 \arguments{
 \item{object}{ICCier object}
@@ -15,6 +15,8 @@
 \item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
 
 \item{inc_group}{Logical. Whether to include the grouping variable with the estimates.}
+
+\item{occasion}{Default: NULL. Vector representing the occasion number. One value per row in newdata. For estimating composite score reliability. If unspecified, set to NULL (default), and raw score ICCs are estimated.}
 
 \item{...}{Not currently used.}
 }

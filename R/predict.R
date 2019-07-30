@@ -18,7 +18,6 @@
 #' @param newdata Data to predict from. If NULL, calls \code{\link{fitted.ICCier}} on fit data.
 #' @param draws Number of draws to use from posterior samples for prediction. Default: All of them.
 #' @inheritParams fitted.ICCier
-#' @param occasion Default: NULL. Vector representing the occasion number. One value per row in newdata. For estimating composite score reliability. If unspecified, set to NULL (default), and raw score ICCs are estimated.
 #' @param ... Not currently used.
 #' @importFrom mvtnorm rmvnorm
 #'
@@ -210,13 +209,14 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 #' @param summary Logical. Whether to return summary (mean, intervals) of ICCs (TRUE), or posterior samples (FALSE)
 #' @inheritParams posterior_interval.ICCier
 #' @param inc_group Logical. Whether to include the grouping variable with the estimates.
+#' @param occasion Default: NULL. Vector representing the occasion number. One value per row in newdata. For estimating composite score reliability. If unspecified, set to NULL (default), and raw score ICCs are estimated.
 #' @param ... Not currently used.
 #'
 #' @return If \code{summary=TRUE}, then the mean and \code{prob}\% intervals are returned for each observation in the model frame.
 #' If \code{summary=FALSE}, an S by N matrix containing the S posterior samples for N observations.
 #' @export
 #'
-fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE){
+fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE,occasion=NULL){
   if(summary) {
     out <- as.data.frame(cbind(mean=matrix(.posterior_mean(object,pars='icc'),ncol=1),posterior_interval(object,prob=prob,pars='icc')))
     colnames(out)[1] <- 'mean'
@@ -225,6 +225,10 @@ fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE){
     }
   } else {
     out <- as.matrix(object$fit,pars='icc')
+  }
+
+  if(!is.null(occasion)){
+    out <- predict.ICCier(object,object$data,summary=summary,prob=prob,inc_group=inc_group,occasion=occasion)
   }
 
   return(out)
