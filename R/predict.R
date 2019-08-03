@@ -247,3 +247,34 @@ fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE,occasion
 posterior_predict.ICCier <- function(object, data, ...){
  ## TODO
 }
+
+
+#' ICCier method for extracting group-specific values
+#'
+#' Takes ICCier object and returns group-specific values.
+#'
+#' @param object ICCier object
+#' @inheritParams fitted.ICCier
+#'
+#' @return
+#' @export
+#'
+#' @examples
+coef.ICCier <- function(object,summary = TRUE,prob = .95){
+
+}
+
+#' ICCier method for extracting random effect values
+#'
+#' Takes ICCier object and returns random effects.
+#'
+#' @param object ICCier object
+#' @inheritParams fitted.ICCier
+#'
+#' @return
+#' @export
+#'
+#' @examples
+ranef.ICCier <- function(object,summary = TRUE, prob = .95){
+
+}
