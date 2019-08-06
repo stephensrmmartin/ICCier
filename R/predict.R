@@ -259,7 +259,6 @@ posterior_predict.ICCier <- function(object, data, ...){
 #' @return
 #' @export
 #'
-#' @examples
 coef.ICCier <- function(object,summary = TRUE,prob = .95){
 
 }
@@ -271,10 +270,31 @@ coef.ICCier <- function(object,summary = TRUE,prob = .95){
 #' @param object ICCier object
 #' @inheritParams fitted.ICCier
 #'
-#' @return
+#' @return 3D array. If `summary = TRUE` (default): `[group, statistic, random effect]`. If `summary = FALSE`: `[group, random effect, MCMC sample]`
 #' @export
 #'
-#' @examples
 ranef.ICCier <- function(object,summary = TRUE, prob = .95){
+  ranef_samps <- .get_random_effect_samples(object)
+  g <- .get_formula_names(object)$grouping
+  L <- (1-prob)/2
+  U <- 1 - L
 
+  sum.fun <- function(x){
+    c(mean=mean(x),quantile(x,c(L,U)))
+  }
+
+  random <- sapply(1:nsamples(object),function(x){
+    cbind(Mean = ranef_samps$mu_random[,,x],ranef_samps$gamma_random[,,x])
+    },simplify = 'array')
+  colnames(random)[1] <- 'Mean'
+
+  if(!summary){
+    rownames(random) <- object$group_map$group_L2[,g]
+    return(random)
+  }
+
+  out <- apply(random,c(1,2),sum.fun)
+  out <- aperm(out,c(2,1,3))
+  rownames(out) <- object$group_map$group_L2[,g]
+  return(out)
 }
