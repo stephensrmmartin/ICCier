@@ -254,13 +254,57 @@ posterior_predict.ICCier <- function(object, data, ...){
 #' Takes ICCier object and returns group-specific values.
 #'
 #' @param object ICCier object
+#' @param predict Logical (Default = FALSE). If TRUE, the group-specific effect is the predicted value and the random effect; e.g., \eqn{g_{0i} = X^{(2)}G + u_{0i}}.
+#' If FALSE, the group-specific effect is the fixed effect and the random effect; e.g., \eqn{g_{0i} = g_0 + u_{0i}}.
+#' The latter is akin to what brms computes.
 #' @inheritParams fitted.ICCier
 #'
-#' @return
+#' @inherit ranef.ICCier return
 #' @export
 #'
-coef.ICCier <- function(object,summary = TRUE,prob = .95){
+coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE){
+  ranef_samps <- .get_random_effect_samples(object)
+  fnames <- .get_formula_names(object)
+  L <- (1-prob)/2
+  U <- 1 - L
+  P_l1 <- object$stan_data$P_l1
+  P_l2 <- object$stan_data$P_l2
 
+  X <- object$stan_data$x_sca_l2
+  if(!predict){
+    if(!('(Intercept)' %in% fnames$l2)) {
+      return(ranef.ICCier(object,summary,prob))
+    }
+    X[,-1] <- 0
+  }
+
+  mu_samps <- array(as.matrix(object$fit,pars='beta0'),dim=c(1,1,nsamples(object)))
+  out_mu <- sapply(1:nsamples(object),function(x){
+    mu_samps[,,x] + ranef_samps$mu_random[,,x]
+  },simplify='array')
+  out_mu <- array(out_mu, dim=c(nrow(out_mu),1,ncol(out_mu)),dimnames=list(NULL,'Mean',NULL))
+
+  gamma_samps <- array(t(as.matrix(object$fit,pars='gamma')),dim=c(P_l2,P_l1,nsamples(object)),dimnames=list(fnames$l2,fnames$l1,NULL))
+  out_gamma <- sapply(1:nsamples(object),function(x){
+    X%*%gamma_samps[,,x] + ranef_samps$gamma_random[,,x]
+  },simplify = 'array')
+
+  out <- array(dim=dim(out_gamma) + c(0,1,0))
+  out[,1,] <- out_mu
+  out[,-1,] <- out_gamma
+  colnames(out) <- c(colnames(out_mu),colnames(out_gamma))
+  rownames(out) <- object$group_map$group_L2[,fnames$grouping]
+  if(!summary){
+    return(out)
+  }
+
+  sum.fun <- function(x){
+    c(mean=mean(x),quantile(x,c(L,U)))
+  }
+
+  out <- apply(out,c(1,2),sum.fun)
+  out <- aperm(out,c(2,1,3))
+  return(out)
 }
 
 #' ICCier method for extracting random effect values
