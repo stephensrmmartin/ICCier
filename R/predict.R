@@ -235,20 +235,6 @@ fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE,occasion
 
 }
 
-#' ICCier method to predict new ICC values.
-#'
-#' @param object ICCier object
-#' @param data Data to predict from.
-#' @param ...
-#'
-#' @return TBD
-#' @keywords internal
-#'
-posterior_predict.ICCier <- function(object, data, ...){
- ## TODO
-}
-
-
 #' Extract group-specific values
 #'
 #' Takes ICCier object and returns group-specific values.
