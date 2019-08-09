@@ -1,4 +1,4 @@
-#' ICCier method to predict new ICC values.
+#' Predict new ICC values.
 #'
 #' Predicts new ICC values.
 #'
@@ -92,7 +92,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 
 }
 
-#' Extracts random effect samples.
+#' Extract random effect samples.
 #'
 #' gamma_group and beta_group are returned.
 #' However, for prediction, we need the group-specific random effects.
@@ -203,7 +203,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   return(mget(c('gamma','eta','random_z','Omega')))
 }
 
-#' ICCier method to extract ICC values.
+#' Extract ICC values.
 #'
 #' @param object ICCier object
 #' @param summary Logical. Whether to return summary (mean, intervals) of ICCs (TRUE), or posterior samples (FALSE)
@@ -249,7 +249,7 @@ posterior_predict.ICCier <- function(object, data, ...){
 }
 
 
-#' ICCier method for extracting group-specific values
+#' Extract group-specific values
 #'
 #' Takes ICCier object and returns group-specific values.
 #'
@@ -307,7 +307,19 @@ coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE){
   return(out)
 }
 
-#' ICCier method for extracting random effect values
+#' Extract Random Effects
+#'
+#' @param object any fitted object from which random effects estimates can be extracted.
+#' @param ... additional arguments
+#'
+#' @return Depends on method function.
+#' @export
+#' @keywords internal
+ranef <- function(object,...){
+  UseMethod('ranef')
+}
+
+#' Extract random effect values
 #'
 #' Takes ICCier object and returns random effects.
 #'

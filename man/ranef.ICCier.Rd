@@ -2,9 +2,9 @@
 % Please edit documentation in R/predict.R
 \name{ranef.ICCier}
 \alias{ranef.ICCier}
-\title{ICCier method for extracting random effect values}
+\title{Extract random effect values}
 \usage{
-ranef.ICCier(object, summary = TRUE, prob = 0.95)
+\method{ranef}{ICCier}(object, summary = TRUE, prob = 0.95)
 }
 \arguments{
 \item{object}{ICCier object}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/rstantools_defs.R
 \name{loo.ICCier}
 \alias{loo.ICCier}
-\title{LOO method for computing leave-one-out (LOO).}
+\title{Compute leave-one-out (LOO).}
 \usage{
 \method{loo}{ICCier}(object, ...)
 }
@@ -13,6 +13,5 @@
 Loo object. See \code{\link[loo]{loo}}.
 }
 \description{
-LOO method for computing leave-one-out (LOO).
+Compute leave-one-out (LOO).
 }
-\keyword{internal}

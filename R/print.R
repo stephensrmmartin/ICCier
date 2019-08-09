@@ -87,7 +87,7 @@ summary.ICCier <- function(object,prob=.95,...){
 #' @param ... Further arguments to \code{print}.
 #'
 #' @export
-#'
+#' @keywords internal
 print.ICCier <- function(object,...){
   cat('Formula:',deparse(object$formula),'\n')
   cat('\n')
@@ -109,7 +109,7 @@ print.ICCier <- function(object,...){
 #'
 #' @return Invisibly returns summary object.
 #' @export
-#'
+#' @keywords internal
 print.summary.ICCier <- function(object,...){
 
   dots <- list(...)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/rstantools_defs.R
 \name{log_lik.ICCier}
 \alias{log_lik.ICCier}
-\title{ICCier method for pointwise log-likelihood}
+\title{Extract pointwise log-likelihood}
 \usage{
 \method{log_lik}{ICCier}(object, ...)
 }
@@ -15,6 +15,6 @@
 S by N matrix of log likelihoods.
 }
 \description{
-ICCier method for pointwise log-likelihood
+Extract pointwise log-likelihood
 }
 \keyword{internal}

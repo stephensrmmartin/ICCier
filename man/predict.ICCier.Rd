@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict.R
 \name{predict.ICCier}
 \alias{predict.ICCier}
-\title{ICCier method to predict new ICC values.}
+\title{Predict new ICC values.}
 \usage{
 \method{predict}{ICCier}(object, newdata = NULL, draws = NULL,
   summary = TRUE, prob = 0.95, inc_group = TRUE, occasion = NULL,

@@ -19,7 +19,7 @@ posterior_interval.ICCier <- function(object, prob = .95, pars, ...){
   out
 }
 
-#' ICCier method for pointwise log-likelihood
+#' Extract pointwise log-likelihood
 #'
 #' @param object ICCier object
 #' @param ... Not used.
@@ -33,7 +33,7 @@ log_lik.ICCier <- function(object,...){
   samps
 }
 
-#' ICCier method for extracting the number of posterior samples.
+#' Extract the number of posterior samples.
 #'
 #' @param object ICCier object.
 #' @param ... Not used.
@@ -46,14 +46,14 @@ nsamples.ICCier <- function(object, ...){
   return(n.samps)
 }
 
-#' LOO method for computing leave-one-out (LOO).
+#' Compute leave-one-out (LOO).
 #'
 #' @param object ICCier object.
 #'
 #' @return Loo object. See \code{\link[loo]{loo}}.
 #' @export
 #' @import loo
-#' @keywords internal
+#' @export loo
 #'
 loo.ICCier <- function(object,...){
   LL_array <- log_lik(object,merge_chains=FALSE)

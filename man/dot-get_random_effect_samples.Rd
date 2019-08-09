@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict.R
 \name{.get_random_effect_samples}
 \alias{.get_random_effect_samples}
-\title{Extracts random effect samples.}
+\title{Extract random effect samples.}
 \usage{
 .get_random_effect_samples(object, draws = NULL)
 }

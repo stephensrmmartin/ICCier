@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict.R
 \name{coef.ICCier}
 \alias{coef.ICCier}
-\title{ICCier method for extracting group-specific values}
+\title{Extract group-specific values}
 \usage{
 \method{coef}{ICCier}(object, summary = TRUE, prob = 0.95,
   predict = FALSE)

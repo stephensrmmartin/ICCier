@@ -2,7 +2,7 @@
 % Please edit documentation in R/rstantools_defs.R
 \name{nsamples.ICCier}
 \alias{nsamples.ICCier}
-\title{ICCier method for extracting the number of posterior samples.}
+\title{Extract the number of posterior samples.}
 \usage{
 \method{nsamples}{ICCier}(object, ...)
 }
@@ -15,6 +15,6 @@
 Real value. Number of posterior samples stored (post-warmup).
 }
 \description{
-ICCier method for extracting the number of posterior samples.
+Extract the number of posterior samples.
 }
 \keyword{internal}

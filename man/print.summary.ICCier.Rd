@@ -17,3 +17,4 @@ Invisibly returns summary object.
 \description{
 Print method for ICCier summaries.
 }
+\keyword{internal}

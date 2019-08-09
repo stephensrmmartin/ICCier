@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict.R
 \name{fitted.ICCier}
 \alias{fitted.ICCier}
-\title{ICCier method to extract ICC values.}
+\title{Extract ICC values.}
 \usage{
 \method{fitted}{ICCier}(object, summary = TRUE, prob = 0.95,
   inc_group = TRUE, occasion = NULL)
@@ -25,5 +25,5 @@ If \code{summary=TRUE}, then the mean and \code{prob}\% intervals are returned f
 If \code{summary=FALSE}, an S by N matrix containing the S posterior samples for N observations.
 }
 \description{
-ICCier method to extract ICC values.
+Extract ICC values.
 }
