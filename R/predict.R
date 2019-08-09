@@ -282,12 +282,13 @@ coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE){
   out_mu <- sapply(1:nsamples(object),function(x){
     mu_samps[,,x] + ranef_samps$mu_random[,,x]
   },simplify='array')
-  out_mu <- array(out_mu, dim=c(nrow(out_mu),1,ncol(out_mu)),dimnames=list(NULL,'Mean',NULL))
+  out_mu <- array(out_mu, dim=c(nrow(out_mu),1,nsamples(object)),dimnames=list(NULL,'Mean',NULL))
 
   gamma_samps <- array(t(as.matrix(object$fit,pars='gamma')),dim=c(P_l2,P_l1,nsamples(object)),dimnames=list(fnames$l2,fnames$l1,NULL))
   out_gamma <- sapply(1:nsamples(object),function(x){
     X%*%gamma_samps[,,x] + ranef_samps$gamma_random[,,x]
   },simplify = 'array')
+  out_gamma <- array(out_gamma, dim=c(nrow(out_gamma),ncol(out_gamma),nsamples(object)),dimnames=list(NULL,fnames$l1,NULL))
 
   out <- array(dim=dim(out_gamma) + c(0,1,0))
   out[,1,] <- out_mu
@@ -342,7 +343,8 @@ ranef.ICCier <- function(object,summary = TRUE, prob = .95){
   random <- sapply(1:nsamples(object),function(x){
     cbind(Mean = ranef_samps$mu_random[,,x],ranef_samps$gamma_random[,,x])
     },simplify = 'array')
-  colnames(random)[1] <- 'Mean'
+  # colnames(random)[1] <- 'Mean'
+  colnames(random) <- c('Mean',colnames(ranef_samps$gamma_random))
 
   if(!summary){
     rownames(random) <- object$group_map$group_L2[,g]
