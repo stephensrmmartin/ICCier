@@ -26,6 +26,8 @@ posterior_interval.ICCier <- function(object, prob = .95, pars, ...){
 #'
 #' @return S by N matrix of log likelihoods.
 #' @export
+#' @importFrom rstantools log_lik
+#' @export log_lik
 #'
 #' @keywords internal
 log_lik.ICCier <- function(object,...){
@@ -40,6 +42,8 @@ log_lik.ICCier <- function(object,...){
 #'
 #' @return Real value. Number of posterior samples stored (post-warmup).
 #' @export
+#' @importFrom rstantools nsamples
+#' @export nsamples
 #' @keywords internal
 nsamples.ICCier <- function(object, ...){
   n.samps <- (object$fit@sim$iter - object$fit@sim$warmup)*object$fit@sim$chains
@@ -54,7 +58,7 @@ nsamples.ICCier <- function(object, ...){
 #' @export
 #' @import loo
 #' @export loo
-#'
+#' @keywords internal
 loo.ICCier <- function(object,...){
   LL_array <- log_lik(object,merge_chains=FALSE)
   r_eff <- relative_eff(exp(LL_array))
