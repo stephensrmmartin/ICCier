@@ -308,18 +308,6 @@ coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE){
   return(out)
 }
 
-#' Extract Random Effects
-#'
-#' @param object any fitted object from which random effects estimates can be extracted.
-#' @param ... additional arguments
-#'
-#' @return Depends on method function.
-#' @export
-#' @keywords internal
-ranef <- function(object,...){
-  UseMethod('ranef')
-}
-
 #' Extract random effect values
 #'
 #' Takes ICCier object and returns random effects.
@@ -329,6 +317,8 @@ ranef <- function(object,...){
 #'
 #' @return 3D array. If `summary = TRUE` (default): `[group, statistic, random effect]`. If `summary = FALSE`: `[group, random effect, MCMC sample]`
 #' @export
+#' @importFrom nlme ranef
+#' @export ranef
 #'
 ranef.ICCier <- function(object,summary = TRUE, prob = .95){
   ranef_samps <- .get_random_effect_samples(object)
