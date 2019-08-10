@@ -64,7 +64,7 @@ ICCier <- function(formula, data, ...){
             pars = c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega','icc_mean','icc_sd')),
             dots)
   stanOut <- do.call('sampling',args=args)
-  out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map,d$conditional)
+  out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map,conditional=d$conditional)
   diagnostics <- .get_diagnostics(out)
   out$diagnostics <- diagnostics
   class(out) <- c('ICCier')
