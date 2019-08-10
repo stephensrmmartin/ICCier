@@ -12,7 +12,11 @@
 #'
 #' The formula syntax is as follows:
 #'
+#' For an unconditional model:
 #' \code{outcome | personID ~ Level_1_formula | Level_2_formula}
+#'
+#' For a conditional model:
+#' \code{outcome | personID ~ Level_1_formula | Level_2_formula | Level_1_conditional | Level_2_conditional}
 #'
 #' The model is implemented in a 'maximal' manner, meaning \emph{all} level 1 effects are assumed to randomly vary and correlate.
 #' Moreover, \emph{all} level 2 variables predict each level 1 parameter.
@@ -20,7 +24,7 @@
 #' Level 1 or Level 2 interaction terms may be included.
 #'
 #' For now, the Level 2 formula predicts both the level 1 scale parameters, as well as the level 2 random effect variances.
-#' If you wish to only have person-specific IICs, use \code{1} as the level 1 formula (intercept-only).
+#' If you wish to only have person-specific ICCs, use \code{1} as the level 1 formula (intercept-only).
 #'
 #' @param formula Formula representing the model. See details.
 #' @param data Data frame containing all variables.
