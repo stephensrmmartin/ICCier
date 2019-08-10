@@ -51,6 +51,9 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 
   samps <- .extract_transform(object,draws)
   dat <- .parse_formula(object$formula,newdata,predict=TRUE)
+  Q_l1 <- object$stan_data$Q_l1
+  P_l1 <- object$stan_data$P_l1
+
   out <- sapply(1:nrow(dat$stan_data$x_sca_l1),FUN = function(i){ # Each row
     sapply(1:draws, function(s){ # Each posterior sample
       sds <- as.vector(exp(dat$stan_data$x_sca_l2[i,,drop=FALSE] %*% samps$eta[,,s]))
@@ -62,9 +65,9 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
           # Get group_numeric for this row from previous fit.
           group_numeric_i <- object$group_map$group_L2[object$group_map$group_L2[,1] == dat$group_map$group_L1[i,1], 'group_numeric']
           # Add fixed to RE_z(diag(sd)L).
-          gamma_group <- gamma_group + (samps$random_z[,,s][group_numeric_i,,drop=FALSE] %*% t(sds.diag%*%t(chol(samps$Omega[,,s]))))[-1]
+          gamma_group <- gamma_group + (samps$random_z[,,s][group_numeric_i,,drop=FALSE] %*% t(sds.diag%*%t(chol(samps$Omega[,,s]))))[(Q_l1 + 1):(Q_l1 + P_l1)]
         } else {
-          gamma_group <- gamma_group + mvtnorm::rmvnorm(1,sigma=sds.diag%*%samps$Omega[,,s]%*%sds.diag)[-1]
+          gamma_group <- gamma_group + mvtnorm::rmvnorm(1,sigma=sds.diag%*%samps$Omega[,,s]%*%sds.diag)[(Q_l1 + 1):(Q_l1 + P_l1)]
         }
       }
       shat <- exp(dat$stan_data$x_sca_l1[i,,drop=FALSE] %*% t(gamma_group))
