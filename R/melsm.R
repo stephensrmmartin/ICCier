@@ -119,7 +119,11 @@ ICCier <- function(formula, data, ...){
   x_sca_l1 <- model.matrix(f, mf, rhs=1)
   P_l1 <- ncol(x_sca_l1)
 
-  f.location <- ifelse(conditional, Formula(formula(f,rhs=c(3,4),lhs=0)), Formula(~1|1))
+  if(conditional){
+    f.location <- Formula(formula(f,rhs=c(3,4),lhs=0))
+  } else{
+    f.location <- Formula(~1|1)
+  }
   x_loc_l1 <- model.matrix(f.location,mf,rhs=1)
   Q_l1 <- ncol(x_loc_l1)
 
@@ -131,7 +135,7 @@ ICCier <- function(formula, data, ...){
   } else {
     x_l2.mf <- model.frame(f,mf,lhs=2)
     x_l2 <- as.data.frame(do.call(rbind,lapply(split(x_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
-    x_l2 <- x_l2[order(x_l2[,1],-1,drop=FALSE)]
+    x_l2 <- x_l2[order(x_l2[,1]),-1,drop=FALSE]
 
     x_sca_l2 <- model.matrix(f,x_l2,rhs=2)
     x_loc_l2 <- model.matrix(f.location,x_l2,rhs=2)
