@@ -118,45 +118,33 @@ ICCier <- function(formula, data, ...){
 
   x_sca_l1 <- model.matrix(f, mf, rhs=1)
   P_l1 <- ncol(x_sca_l1)
-  if(conditional){
-    x_loc_l1 <- model.matrix(f,mf,rhs=3)
-    Q_l1 <- ncol(x_loc_l1)
-  }
+
+  f.location <- ifelse(conditional, Formula(formula(f,rhs=c(3,4),lhs=0)), Formula(~1|1))
+  x_loc_l1 <- model.matrix(f.location,mf,rhs=1)
+  Q_l1 <- ncol(x_loc_l1)
 
   if(predict){
     # Leave matrix as-is for prediction.
     x_sca_l2 <- model.matrix(f,mf,rhs=2)
-    if(conditional) {
-      x_loc_l2 <- model.matrix(f,mf,rhs=4)
-    }
+    x_loc_l2 <- model.matrix(f.location,mf,rhs=2)
     group$group_L2 <- group$group_L1
   } else {
-    x_sca_l2.mf <- model.frame(f,mf,lhs=2,rhs=2)
-    x_sca_l2 <- as.data.frame(do.call(rbind,lapply(split(x_sca_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
-    x_sca_l2 <- x_sca_l2[order(x_sca_l2[,1]),-1,drop=FALSE]
-    x_sca_l2 <- model.matrix(f,x_sca_l2,rhs=2)
+    x_l2.mf <- model.frame(f,mf,lhs=2)
+    x_l2 <- as.data.frame(do.call(rbind,lapply(split(x_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
+    x_l2 <- x_l2[order(x_l2[,1],-1,drop=FALSE)]
 
-    if(conditional){
-      x_loc_l2.mf <- model.frame(f,mf,lhs=2,rhs=4)
-      x_loc_l2 <- as.data.frame(do.call(rbind,lapply(split(x_loc_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
-      x_loc_l2 <- x_loc_l2[order(x_loc_l2[,1]),-1,drop=FALSE]
-      x_loc_l2 <- model.matrix(f,x_loc_l2,rhs=4)
-    }
+    x_sca_l2 <- model.matrix(f,x_l2,rhs=2)
+    x_loc_l2 <- model.matrix(f.location,x_l2,rhs=2)
   }
   P_l2 <- ncol(x_sca_l2)
-  if(conditional){
-    Q_l2 <- ncol(x_loc_l2)
-  }
+  Q_l2 <- ncol(x_loc_l2)
 
   if(predict){
     y <- NA
   } else {
     y <- mf[,fnames[1]]
   }
-  stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y'))
-  if(conditional){
-    stan_data <- c(stan_data,mget(c('Q_l1','Q_l2','x_loc_l1','x_loc_l2')))
-  }
+  stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y','Q_l1','Q_l2','x_loc_l1','x_loc_l2'))
   stan_data$group <- group$group_L1$group_numeric
   return(list(stan_data=stan_data,group_map = group, model.frame = mf,conditional=conditional))
 }
