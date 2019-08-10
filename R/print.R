@@ -283,9 +283,11 @@ print.summary.ICCier <- function(object,...){
 .get_formula_names <- function(object){
   l1 <- colnames(object$stan_data$x_sca_l1)
   l2 <- colnames(object$stan_data$x_sca_l2)
+  l1.loc <- colnames(object$stan_data$x_loc_l1)
+  l2.loc <- colnames(object$stan_data$x_loc_l2)
   outcome <- colnames(model.part(object$formula,object$data,lhs=1))
   grouping <- colnames(model.part(object$formula,object$data,lhs=2))
-  return(mget(c('l1','l2','outcome','grouping')))
+  return(mget(c('l1','l2','outcome','grouping','l1.loc','l2.loc')))
 }
 
 .print_diagnostics <- function(diagnostics){
