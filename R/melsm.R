@@ -55,11 +55,12 @@ ICCier <- function(formula, data, ...){
   }
 
   d <- .parse_formula(formula, data)
-  args <- c(list(object=stanmodels$melsmICC, data=d$stan_data,
+  model <- ifelse(d$conditional, stanmodels$melsmCondICC, stanmodels$melsmICC)
+  args <- c(list(object=model, data=d$stan_data,
             pars = c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega','icc_mean','icc_sd')),
             dots)
   stanOut <- do.call('sampling',args=args)
-  out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map)
+  out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map,d$conditional)
   diagnostics <- .get_diagnostics(out)
   out$diagnostics <- diagnostics
   class(out) <- c('ICCier')
@@ -82,11 +83,16 @@ ICCier <- function(formula, data, ...){
 
   f <- Formula::Formula(formula)
   length.f <- length(f)
+  conditional <- length.f[2] > 2
+
   if(length.f[1] != 2){
     stop('Both the outcome and person-level indicator variables must be specified.')
   }
-  if(length.f[2] != 2){
+  if(length.f[2] < 2){
     stop('Both the level 1 and level 2 formulas must be specified.')
+  }
+  if(length.f[2] < 4 & conditional){
+    stop('If specifying a location model, both level 1 and level 2 formulas must be specified.')
   }
   fnames <- attr(terms(f),'term.labels')
 
@@ -112,18 +118,35 @@ ICCier <- function(formula, data, ...){
 
   x_sca_l1 <- model.matrix(f, mf, rhs=1)
   P_l1 <- ncol(x_sca_l1)
+  if(conditional){
+    x_loc_l1 <- model.matrix(f,mf,rhs=3)
+    Q_l1 <- ncol(x_loc_l1)
+  }
 
   if(predict){
     # Leave matrix as-is for prediction.
     x_sca_l2 <- model.matrix(f,mf,rhs=2)
+    if(conditional) {
+      x_loc_l2 <- model.matrix(f,mf,rhs=4)
+    }
     group$group_L2 <- group$group_L1
   } else {
     x_sca_l2.mf <- model.frame(f,mf,lhs=2,rhs=2)
     x_sca_l2 <- as.data.frame(do.call(rbind,lapply(split(x_sca_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
     x_sca_l2 <- x_sca_l2[order(x_sca_l2[,1]),-1,drop=FALSE]
     x_sca_l2 <- model.matrix(f,x_sca_l2,rhs=2)
+
+    if(conditional){
+      x_loc_l2.mf <- model.frame(f,mf,lhs=2,rhs=4)
+      x_loc_l2 <- as.data.frame(do.call(rbind,lapply(split(x_loc_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
+      x_loc_l2 <- x_loc_l2[order(x_loc_l2[,1]),-1,drop=FALSE]
+      x_loc_l2 <- model.matrix(f,x_loc_l2,rhs=4)
+    }
   }
   P_l2 <- ncol(x_sca_l2)
+  if(conditional){
+    Q_l2 <- ncol(x_loc_l2)
+  }
 
   if(predict){
     y <- NA
@@ -131,8 +154,11 @@ ICCier <- function(formula, data, ...){
     y <- mf[,fnames[1]]
   }
   stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y'))
+  if(conditional){
+    stan_data <- c(stan_data,mget(c('Q_l1','Q_l2','x_loc_l1','x_loc_l2')))
+  }
   stan_data$group <- group$group_L1$group_numeric
-  return(list(stan_data=stan_data,group_map = group, model.frame = mf))
+  return(list(stan_data=stan_data,group_map = group, model.frame = mf,conditional=conditional))
 }
 
 .get_diagnostics <- function(object){
