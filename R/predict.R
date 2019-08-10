@@ -114,28 +114,36 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   K <- object$stan_data$K
   P_l1 <- object$stan_data$P_l1
   P_l2 <- object$stan_data$P_l2
-  X <- object$stan_data$x_sca_l2
+  Q_l1 <- object$stan_data$Q_l1
+  Q_l2 <- object$stan_data$Q_l2
+  x_sca_l2 <- object$stan_data$x_sca_l2
+  x_loc_l2 <- object$stan_data$x_loc_l2
 
   # Grab (formatted) matrices
-  samps.mu <- as.matrix(object$fit,pars='beta0')[1:draws,,drop=FALSE]
+  samps.mu <- array(t(as.matrix(object$fit,pars='beta0')[1:draws,]),dim=c(Q_l2,Q_l1,draws))
   samps.gamma <- array(t(as.matrix(object$fit,pars='gamma')[1:draws,]),dim=c(P_l2,P_l1,draws))
+  # samps.mu_group <- as.matrix(object$fit,pars='mu_group')[1:draws,,drop=FALSE]
+  # samps.mu_group <- array(t(samps.mu_group),dim=c(K,1,draws))
   samps.mu_group <- as.matrix(object$fit,pars='mu_group')[1:draws,,drop=FALSE]
-  samps.mu_group <- array(t(samps.mu_group),dim=c(K,1,draws))
+  samps.mu_group <- array(t(samps.mu_group),dim=c(K,Q_l1,draws))
   samps.gamma_group <- as.matrix(object$fit,pars='gamma_group')[1:draws,,drop=FALSE]
   samps.gamma_group <- array(t(samps.gamma_group),dim=c(K,P_l1,draws))
 
   # Solve for RE
   group_mu_random <- sapply(1:draws,FUN=function(x){
-    samps.mu_group[,,x] - samps.mu[x,1]
+    samps.mu_group[,,x] - x_loc_l2%*%samps.mu[,,x]
   },simplify='array')
-  group_mu_random <- array(group_mu_random,dim=c(K,1,draws))
+  # group_mu_random <- sapply(1:draws,FUN=function(x){
+  #   samps.mu_group[,,x] - samps.mu[x,1]
+  # },simplify='array')
+  group_mu_random <- array(group_mu_random,dim=c(K,Q_l1,draws))
 
   group_gamma_random <- sapply(1:draws,FUN=function(x){
-    samps.gamma_group[,,x] - X%*%samps.gamma[,,x]
+    samps.gamma_group[,,x] - x_sca_l2%*%samps.gamma[,,x]
   },simplify = 'array')
   group_gamma_random <- array(group_gamma_random,dim=c(K,P_l1,draws))
 
-  colnames(group_mu_random) <- 'Mean'
+  colnames(group_mu_random) <- colnames(object$stan_data$x_loc_l1)
   colnames(group_gamma_random) <- colnames(object$stan_data$x_sca_l1)
 
   list(mu_random = group_mu_random, gamma_random = group_gamma_random)
@@ -157,10 +165,12 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   if(is.null(draws)){
     draws <- nsamples(object)
   }
+  P_l1 <- object$stan_data$P_l1
+  Q_l1 <- object$stan_data$Q_l1
   rand_samps <- .get_random_effect_samples(object,draws)
   samps <- sapply(1:draws,function(x){cbind(rand_samps$mu_random[,,x],rand_samps$gamma_random[,,x])},simplify='array')
-  omega <- array(t(as.matrix(object$fit,pars='Omega')[1:draws,]),dim=c(object$stan_data$P_l1 + 1, object$stan_data$P_l1 + 1,draws))
-  eta <- array(t(as.matrix(object$fit,pars='eta')[1:draws,]),dim=c(object$stan_data$P_l2, object$stan_data$P_l1 + 1, draws))
+  omega <- array(t(as.matrix(object$fit,pars='Omega')[1:draws,]),dim=c(P_l1 + Q_l1, P_l1 + Q_l1,draws))
+  eta <- array(t(as.matrix(object$fit,pars='eta')[1:draws,]),dim=c(object$stan_data$P_l2, P_l1 + Q_l1, draws))
 
   L_omega <- array(apply(omega,3,function(x){t(chol(x))}),dim=dim(omega))
   sds <- sapply(1:draws,FUN = function(x){
@@ -168,7 +178,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   }, simplify='array')
 
   sapply(1:draws,FUN=function(x){
-    t(sapply(1:dim(sds)[1], FUN=function(y){
+    t(sapply(1:nrow(x_sca_l2), FUN=function(y){
       samps[y,,x] %*% solve(t(diag(sds[y,,x]) %*% L_omega[,,x]))
     },simplify='matrix')
     )
@@ -192,6 +202,8 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   K <- object$stan_data$K
   P_l2 <- object$stan_data$P_l2
   P_l1 <- object$stan_data$P_l1
+  Q_l2 <- object$stan_data$Q_l2
+  Q_l1 <- object$stan_data$Q_l1
   # Only these are needed for predicting ICC
   samps <- as.matrix(object$fit, pars = c('gamma','eta','Omega'))[1:draws,]
   gamma.cols <- grep('gamma.*',colnames(samps),value = TRUE)
@@ -200,8 +212,8 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   Omega.cols <- grep('Omega.*',colnames(samps),value = TRUE)
 
   gamma <- array(t(samps[,gamma.cols]),dim=c(P_l2,P_l1,draws))
-  eta <- array(t(samps[,eta.cols]),dim=c(P_l2,P_l1 + 1,draws))
-  Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + 1,P_l1 + 1,draws))
+  eta <- array(t(samps[,eta.cols]),dim=c(P_l2,P_l1 + Q_l1,draws))
+  Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + Q_l1,P_l1 + Q_l1,draws))
   random_z <- .get_random_effect_z_samples(object,draws)
   return(mget(c('gamma','eta','random_z','Omega')))
 }
@@ -258,30 +270,39 @@ coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE){
   U <- 1 - L
   P_l1 <- object$stan_data$P_l1
   P_l2 <- object$stan_data$P_l2
+  Q_l1 <- object$stan_data$Q_l1
+  Q_l2 <- object$stan_data$Q_l2
 
-  X <- object$stan_data$x_sca_l2
+  x_sca_l2 <- object$stan_data$x_sca_l2
+  x_loc_l2 <- object$stan_data$x_loc_l2
   if(!predict){
     if(!('(Intercept)' %in% fnames$l2)) {
       return(ranef.ICCier(object,summary,prob))
     }
-    X[,-1] <- 0
+    x_sca_l2[,-1] <- 0
+    x_loc_l2[,-1] <- 0
   }
 
-  mu_samps <- array(as.matrix(object$fit,pars='beta0'),dim=c(1,1,nsamples(object)))
+  mu_samps <- array(t(as.matrix(object$fit,pars='beta0')),dim=c(Q_l2,Q_l1,nsamples(object)),dimnames=list(fnames$l2.loc,fnames$l1.loc,NULL))
   out_mu <- sapply(1:nsamples(object),function(x){
-    mu_samps[,,x] + ranef_samps$mu_random[,,x]
-  },simplify='array')
-  out_mu <- array(out_mu, dim=c(nrow(out_mu),1,nsamples(object)),dimnames=list(NULL,'Mean',NULL))
+    x_loc_l2%*%mu_samps[,,x] + ranef_samps$mu_random[,,x]
+  },simplify = 'array')
+  out_mu <- array(out_mu, dim=c(nrow(out_mu),ncol(out_mu),nsamples(object)),dimnames=list(NULL,fnames$l1.loc,NULL))
+  # mu_samps <- array(as.matrix(object$fit,pars='beta0'),dim=c(1,1,nsamples(object)))
+  # out_mu <- sapply(1:nsamples(object),function(x){
+  #   mu_samps[,,x] + ranef_samps$mu_random[,,x]
+  # },simplify='array')
+  # out_mu <- array(out_mu, dim=c(nrow(out_mu),1,nsamples(object)),dimnames=list(NULL,'Mean',NULL))
 
   gamma_samps <- array(t(as.matrix(object$fit,pars='gamma')),dim=c(P_l2,P_l1,nsamples(object)),dimnames=list(fnames$l2,fnames$l1,NULL))
   out_gamma <- sapply(1:nsamples(object),function(x){
-    X%*%gamma_samps[,,x] + ranef_samps$gamma_random[,,x]
+    x_sca_l2%*%gamma_samps[,,x] + ranef_samps$gamma_random[,,x]
   },simplify = 'array')
   out_gamma <- array(out_gamma, dim=c(nrow(out_gamma),ncol(out_gamma),nsamples(object)),dimnames=list(NULL,fnames$l1,NULL))
 
-  out <- array(dim=dim(out_gamma) + c(0,1,0))
-  out[,1,] <- out_mu
-  out[,-1,] <- out_gamma
+  out <- array(dim=dim(out_gamma) + c(0,Q_l1,0))
+  out[,1:(Q_l1),] <- out_mu
+  out[,(Q_l1+1):(Q_l1 + P_l1),] <- out_gamma
   colnames(out) <- c(colnames(out_mu),colnames(out_gamma))
   rownames(out) <- object$group_map$group_L2[,fnames$grouping]
   if(!summary){
@@ -323,7 +344,7 @@ ranef.ICCier <- function(object,summary = TRUE, prob = .95){
     cbind(Mean = ranef_samps$mu_random[,,x],ranef_samps$gamma_random[,,x])
     },simplify = 'array')
   # colnames(random)[1] <- 'Mean'
-  colnames(random) <- c('Mean',colnames(ranef_samps$gamma_random))
+  colnames(random) <- c(colnames(ranef_samps$mu_random),colnames(ranef_samps$gamma_random))
 
   if(!summary){
     rownames(random) <- object$group_map$group_L2[,g]
