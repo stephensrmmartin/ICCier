@@ -42,7 +42,7 @@ summary.ICCier <- function(object,prob=.95,...){
   N <- object$stan_data$N
   meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K,digits=digits)
 
-  estimate <- list(beta = beta$mu,
+  estimate <- list(beta = t(beta$mu),
                 gamma = t(gamma$gamma),
                 eta = t(eta$eta),
                 omega=omega$omega,
@@ -51,7 +51,7 @@ summary.ICCier <- function(object,prob=.95,...){
                 icc_mean = icc_mean$icc_mean,
                 icc_sd = icc_sd$icc_sd
                 )
-  ci.L <- list(beta = beta$mu.L,
+  ci.L <- list(beta = t(beta$mu.L),
                 gamma = t(gamma$gamma.L),
                 eta = t(eta$eta.L),
                 omega=omega$omega.L,
@@ -60,7 +60,7 @@ summary.ICCier <- function(object,prob=.95,...){
                 icc_mean = icc_mean$icc_mean.L,
                 icc_sd = icc_sd$icc_sd.L
                 )
-  ci.U <- list(beta = beta$mu.U,
+  ci.U <- list(beta = t(beta$mu.U),
                 gamma = t(gamma$gamma.U),
                 eta = t(eta$eta.U),
                 omega=omega$omega.U,
@@ -245,7 +245,7 @@ print.summary.ICCier <- function(object,...){
 }
 
 .get_omega <- function(object,prob=.95,...){
-  fnames <- .get_formula_names(object)
+  fnames <- .get_formula_names(object,prefix=TRUE)
   omega <- .posterior_mean(object,'Omega')
   omega.ci <- posterior_interval(object,prob=prob,pars='Omega')
 
