@@ -94,7 +94,7 @@ print.ICCier <- function(object,...){
 
 
   cat('Coefficients:','\n')
-  cat('Mean: \t',format(.get_beta(object)$mu,...),'\n\n')
+  cat('Location: \t',print(t(.get_beta(object)$mu),...),'\n\n')
   cat('Within-person Variance: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
   cat('Between-person Variance: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
   cat('Random Effect Correlations: \n'); print(.get_omega(object)$omega,...); cat('\n')
@@ -128,6 +128,14 @@ print.summary.ICCier <- function(object,...){
   beta.sum <- cbind(format(round(object$estimate$beta,digits),...),paste0('[',format(round(object$ci$L$beta,digits),...),' ',format(round(object$ci$U$beta,digits),...),']'))
   colnames(beta.sum) <- c('',paste0(object$prob*100,'%'))
   rownames(beta.sum) <- ''
+  beta.sum <- cbind(format(round(object$estimate$mu,digits),...),
+                    matrix(paste0('[',format(round(object$ci$L$mu,digits),...),
+                                  ' ',
+                                  format(round(object$ci$U$mu,digits),...),
+                                  ']'),
+                           nrow=nrow(object$estimate$mu)))
+  colnames(mu.sum)[colnames(mu.sum) == ''] <- paste0(object$prob*100,'%')
+  names(dimnames(mu.sum)) <- names(dimnames(object$estimate$mu))
 
   gamma.sum <- cbind(format(round(object$estimate$gamma,digits),...),
                      matrix(paste0('[',format(round(object$ci$L$gamma,digits),...),
@@ -157,7 +165,7 @@ print.summary.ICCier <- function(object,...){
   cat('ICC Summary:','\n'); print(icc.sum,quote=FALSE)
   cat('\n--------------------\n')
   cat('Coefficients:','\n\n')
-  cat('Mean: \n');print(beta.sum,quote=FALSE,...);cat('\n')
+  cat('Location Model: \n');print(beta.sum,quote=FALSE,...);cat('\n')
   cat('Within-person Variance: \n'); print(gamma.sum,quote=FALSE); cat('\n')
   cat('Between-person Variance: \n'); print(eta.sum,quote=FALSE); cat('\n')
   cat('Random Effect Correlations: \n'); print(round(object$estimate$omega,digits),...); cat('\n')
