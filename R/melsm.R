@@ -59,7 +59,11 @@ ICCier <- function(formula, data, ...){
   }
 
   d <- .parse_formula(formula, data)
-  model <- ifelse(d$conditional, stanmodels$melsmCondICC, stanmodels$melsmICC)
+  if(d$conditional){
+    model <- stanmodels$melsmCondICC
+  } else {
+    model <- stanmodels$melsmICC
+  }
   args <- c(list(object=model, data=d$stan_data,
             pars = c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega','icc_mean','icc_sd')),
             dots)
