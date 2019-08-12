@@ -164,20 +164,29 @@ print.summary.ICCier <- function(object,...){
 
   invisible(object)
 }
-## TODO: Add option to extract gamma_group and beta_group. Not in summary, but in coef().
 
 .get_beta <- function(object,prob=.95,...){
+  fnames <- .get_formula_names(object)
+
   mu <- .posterior_mean(object,'beta0')
   mu_group <- .posterior_mean(object, 'mu_group')
   mu.ci <- posterior_interval(object,prob=prob,pars='beta0')
   mu_group.ci <- posterior_interval(object,prob=prob,pars='mu_group')
 
+  # Format as matrix
   K <- object$stan_data$K
+  Q_l1 <- object$stan_data$Q_l1
+  Q_l2 <- object$stan_data$Q_l2
+
+  mu <- matrix(mu, Q_l2, Q_l1)
   mu_group <- matrix(mu_group,nrow=K)
-  mu.L <- mu.ci[,1]
-  mu.U <- mu.ci[,2]
+  mu.L <- matrix(mu.ci[,1], Q_l2, Q_l1)
+  mu.U <- matrix(mu.ci[,2], Q_l2, Q_l1)
   mu_group.L <- matrix(mu_group.ci[,1],nrow=K)
   mu_group.U <- matrix(mu_group.ci[,2],nrow=K)
+
+  rownames(mu) <- rownames(mu.L) <- rownames(mu.U) <- fnames$l2.loc
+  colnames(mu) <- colnames(mu.L) <- colnames(mu.U) <- fnames$l1.loc
 
   out <- mget(c('mu','mu.L','mu.U','mu_group','mu_group.L','mu_group.U'))
 
@@ -221,12 +230,13 @@ print.summary.ICCier <- function(object,...){
 
   P_l1 <- object$stan_data$P_l1
   P_l2 <- object$stan_data$P_l2
-  eta <- matrix(eta, nrow = P_l2)
+  Q_l1 <- object$stan_data$Q_l1
+  eta <- matrix(eta, nrow = P_l2,ncol=P_l1 + Q_l1)
   eta.L <- matrix(eta.ci[,1],nrow=P_l2)
   eta.U <- matrix(eta.ci[,2],nrow=P_l2)
 
   rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$l2
-  colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c('Mean',fnames$l1)
+  colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c(fnames$l1.loc,fnames$l1)
   names(dimnames(eta)) <- names(dimnames(eta.L)) <- names(dimnames(eta.U)) <- c('Level 2','')
 
   out <- mget(c('eta','eta.L','eta.U'))
@@ -239,12 +249,12 @@ print.summary.ICCier <- function(object,...){
   omega <- .posterior_mean(object,'Omega')
   omega.ci <- posterior_interval(object,prob=prob,pars='Omega')
 
-  D <- object$stan_data$P_l1 + 1
+  D <- object$stan_data$P_l1 + object$stan_data$Q_l1
   omega <- matrix(omega,nrow=D)
   omega.L <- matrix(omega.ci[,1],D)
   omega.U <- matrix(omega.ci[,2],D)
 
-  rownames(omega) <- colnames(omega) <- rownames(omega.L) <- colnames(omega.L) <-rownames(omega.U) <- colnames(omega.U) <- c('Mean',fnames$l1)
+  rownames(omega) <- colnames(omega) <- rownames(omega.L) <- colnames(omega.L) <-rownames(omega.U) <- colnames(omega.U) <- c(fnames$l1.loc,fnames$l1)
 
   out <- mget(c('omega','omega.L','omega.U'))
 
