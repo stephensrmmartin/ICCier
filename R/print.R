@@ -235,6 +235,8 @@ print.summary.ICCier <- function(object,...){
   eta.L <- matrix(eta.ci[,1],nrow=P_l2)
   eta.U <- matrix(eta.ci[,2],nrow=P_l2)
 
+  fnames$l1.loc <- paste0('Mean_',fnames$l1.loc)
+  fnames$l2.loc <- paste0('Mean_',fnames$l2.loc)
   rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$l2
   colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c(fnames$l1.loc,fnames$l1)
   names(dimnames(eta)) <- names(dimnames(eta.L)) <- names(dimnames(eta.U)) <- c('Level 2','')
