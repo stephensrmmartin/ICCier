@@ -178,7 +178,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   }, simplify='array')
 
   sapply(1:draws,FUN=function(x){
-    t(sapply(1:nrow(x_sca_l2), FUN=function(y){
+    t(sapply(1:dim(sds)[1], FUN=function(y){
       samps[y,,x] %*% solve(t(diag(sds[y,,x]) %*% L_omega[,,x]))
     },simplify='matrix')
     )
@@ -265,7 +265,7 @@ fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE,occasion
 #'
 coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE){
   ranef_samps <- .get_random_effect_samples(object)
-  fnames <- .get_formula_names(object)
+  fnames <- .get_formula_names(object,prefix = TRUE)
   L <- (1-prob)/2
   U <- 1 - L
   P_l1 <- object$stan_data$P_l1
@@ -332,7 +332,7 @@ coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE){
 #'
 ranef.ICCier <- function(object,summary = TRUE, prob = .95){
   ranef_samps <- .get_random_effect_samples(object)
-  g <- .get_formula_names(object)$grouping
+  fnames <- .get_formula_names(object,prefix=TRUE)
   L <- (1-prob)/2
   U <- 1 - L
 
@@ -343,16 +343,15 @@ ranef.ICCier <- function(object,summary = TRUE, prob = .95){
   random <- sapply(1:nsamples(object),function(x){
     cbind(Mean = ranef_samps$mu_random[,,x],ranef_samps$gamma_random[,,x])
     },simplify = 'array')
-  # colnames(random)[1] <- 'Mean'
-  colnames(random) <- c(colnames(ranef_samps$mu_random),colnames(ranef_samps$gamma_random))
+  colnames(random) <- c(fnames$l1.loc,fnames$l1)
 
   if(!summary){
-    rownames(random) <- object$group_map$group_L2[,g]
+    rownames(random) <- object$group_map$group_L2[,fnames$grouping]
     return(random)
   }
 
   out <- apply(random,c(1,2),sum.fun)
   out <- aperm(out,c(2,1,3))
-  rownames(out) <- object$group_map$group_L2[,g]
+  rownames(out) <- object$group_map$group_L2[,fnames$grouping]
   return(out)
 }
