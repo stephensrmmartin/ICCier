@@ -94,7 +94,7 @@ print.ICCier <- function(object,...){
 
 
   cat('Coefficients:','\n')
-  cat('Location: \t',print(t(.get_beta(object)$mu),...),'\n\n')
+  cat('Location: \n');print(t(.get_beta(object)$mu),...); cat('\n\n')
   cat('Within-person Variance: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
   cat('Between-person Variance: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
   cat('Random Effect Correlations: \n'); print(.get_omega(object)$omega,...); cat('\n')
@@ -125,17 +125,17 @@ print.summary.ICCier <- function(object,...){
   .print_diagnostics(object$meta$diagnostics)
   cat('\n--------------------\n')
 
-  beta.sum <- cbind(format(round(object$estimate$beta,digits),...),paste0('[',format(round(object$ci$L$beta,digits),...),' ',format(round(object$ci$U$beta,digits),...),']'))
-  colnames(beta.sum) <- c('',paste0(object$prob*100,'%'))
-  rownames(beta.sum) <- ''
-  beta.sum <- cbind(format(round(object$estimate$mu,digits),...),
-                    matrix(paste0('[',format(round(object$ci$L$mu,digits),...),
+  # beta.sum <- cbind(format(round(object$estimate$beta,digits),...),paste0('[',format(round(object$ci$L$beta,digits),...),' ',format(round(object$ci$U$beta,digits),...),']'))
+  # colnames(beta.sum) <- c('',paste0(object$prob*100,'%'))
+  # rownames(beta.sum) <- ''
+  beta.sum <- cbind(format(round(object$estimate$beta,digits),...),
+                    matrix(paste0('[',format(round(object$ci$L$beta,digits),...),
                                   ' ',
-                                  format(round(object$ci$U$mu,digits),...),
+                                  format(round(object$ci$U$beta,digits),...),
                                   ']'),
-                           nrow=nrow(object$estimate$mu)))
-  colnames(mu.sum)[colnames(mu.sum) == ''] <- paste0(object$prob*100,'%')
-  names(dimnames(mu.sum)) <- names(dimnames(object$estimate$mu))
+                           nrow=nrow(object$estimate$beta)))
+  colnames(beta.sum)[colnames(beta.sum) == ''] <- paste0(object$prob*100,'%')
+  names(dimnames(beta.sum)) <- names(dimnames(object$estimate$beta))
 
   gamma.sum <- cbind(format(round(object$estimate$gamma,digits),...),
                      matrix(paste0('[',format(round(object$ci$L$gamma,digits),...),
@@ -195,6 +195,9 @@ print.summary.ICCier <- function(object,...){
 
   rownames(mu) <- rownames(mu.L) <- rownames(mu.U) <- fnames$l2.loc
   colnames(mu) <- colnames(mu.L) <- colnames(mu.U) <- fnames$l1.loc
+  names(dimnames(mu)) <- names(dimnames(mu.L)) <- names(dimnames(mu.U)) <- c('Level 2','Level 1')
+
+  colnames(mu_group) <- colnames(mu_group.L) <- colnames(mu_group.U) <- fnames$l1.loc
 
   out <- mget(c('mu','mu.L','mu.U','mu_group','mu_group.L','mu_group.U'))
 
