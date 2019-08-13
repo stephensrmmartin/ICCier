@@ -73,7 +73,7 @@ generated quantities {
   vector[N] log_lik;
   real icc_mean = mean(icc);
   real icc_sd = sd(icc);
-  corr_matrix[P_l1 + 1] Omega = multiply_lower_tri_self_transpose(mu_gamma_group_random_cor_L);
+  corr_matrix[P_l1 + Q_l1] Omega = multiply_lower_tri_self_transpose(mu_gamma_group_random_cor_L);
   {
     for(n in 1:N){
       log_lik[n] = normal_lpdf(y[n] | yhat[n],shat[n]);
