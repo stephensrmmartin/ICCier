@@ -3,7 +3,27 @@ functions {
     int N = rows(sigma);
     vector[N] mu_var = mu_sd .* mu_sd;
     vector[N] sigma2 = sigma .* sigma;
-    return(mu_var ./ (mu_var + sigma2));
+    vector[N] ICC = mu_var ./ (mu_var + sigma2);
+    return(ICC);
+  }
+  // doi: 10.1111/2041-210X.12225; but with predicted sigma_l instead.
+  vector ICC_adjusted(int[] group, matrix x_loc_l1, matrix Omega, matrix mu_gamma_group_random_sd, vector sigma){
+    int N = rows(sigma);
+    int K = rows(mu_gamma_group_random_sd);
+    int dim = rows(Omega);
+    int Q_l1 = cols(x_loc_l1);
+    matrix[dim,dim] cov[K];
+    vector[N] numerator;
+    vector[N] ICC_adjusted;
+
+    for(k in 1:K){
+      cov[k] = quad_form_diag(Omega,mu_gamma_group_random_sd[k]);
+    }
+    for(n in 1:N){
+      numerator[n] = x_loc_l1[n,] * cov[group[n]][1:Q_l1,1:Q_l1] * x_loc_l1[n,]';
+    }
+    ICC_adjusted = (numerator) ./ (numerator + (sigma .* sigma));
+    return(ICC_adjusted);
   }
 }
 data {
@@ -19,6 +39,7 @@ data {
   matrix[N,P_l1] x_sca_l1; // log(sigma) ~ x_sca_l1
   matrix[K,P_l2] x_sca_l2; // gammas ~ x_sca_l2 // For now, assume x_sca_l2 also predicts var(RE)
   vector[N] y;
+  int<lower=0,upper=1> adjust_icc;
 }
 
 parameters {
@@ -69,11 +90,16 @@ model {
 }
 
 generated quantities {
-  vector[N] icc = ICC(mu_gamma_group_random_sd[group,1], shat);
+//  vector[N] icc; = ICC(mu_gamma_group_random_sd[group,1], shat);
+  corr_matrix[P_l1 + Q_l1] Omega = multiply_lower_tri_self_transpose(mu_gamma_group_random_cor_L);
+  vector[N] icc = adjust_icc ? ICC_adjusted(group, x_loc_l1, Omega, mu_gamma_group_random_sd, shat) : ICC(mu_gamma_group_random_sd[group,1], shat);
   vector[N] log_lik;
   real icc_mean = mean(icc);
   real icc_sd = sd(icc);
-  corr_matrix[P_l1 + Q_l1] Omega = multiply_lower_tri_self_transpose(mu_gamma_group_random_cor_L);
+  //vector ICC_adjusted(int[] group, matrix x_loc_l1, matrix Omega, matrix mu_gamma_group_random_sd, vector sigma){
+ // vector[N] icc_adjusted = ICC_adjusted(group, x_loc_l1, Omega, mu_gamma_group_random_sd, shat);
+  //real icc_adjusted_mean = mean(icc_adjusted);
+  //real icc_adjusted_sd = sd(icc_adjusted);
   {
     for(n in 1:N){
       log_lik[n] = normal_lpdf(y[n] | yhat[n],shat[n]);
