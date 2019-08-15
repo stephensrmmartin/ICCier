@@ -28,6 +28,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   fnames <- .get_formula_names(object)
   magic_NA <- 'NA_ICCier'
   magic_ignore <- 'Ignore_ICCier'
+  adjusted <- object$type$adjusted
   if(is.null(data)){
    return(fitted(object,summary,prob,inc_group))
   }
@@ -58,7 +59,13 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
     sapply(1:draws, function(s){ # Each posterior sample
       sds <- as.vector(exp(dat$stan_data$x_sca_l2[i,,drop=FALSE] %*% samps$eta[,,s]))
       sds.diag <- diag(sds,length(sds),length(sds))
+
       var.mu <- sds[1]^2
+      if(adjusted){
+        cov <- sds.diag %*% samps$Omega[,,s] %*% sds.diag
+        var.mu <- dat$stan_data$x_loc_l1[i,,drop=FALSE] %*% cov[1:Q_l1,1:Q_l1] %*% t(dat$stan_data$x_loc_l1[i,,drop=FALSE])
+      }
+
       gamma_group <- dat$stan_data$x_sca_l2[i,,drop=FALSE] %*% samps$gamma[,,s]
       if(grouping_available){
         if(group_known[i]){
@@ -72,6 +79,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
       }
       shat <- exp(dat$stan_data$x_sca_l1[i,,drop=FALSE] %*% t(gamma_group))
       if(!is.null(occasion)){ # Composite/avg score ICC
+        if(adjusted){stop('Occasion does not make sense with an adjusted ICC.')}
         icc <- var.mu / (var.mu + shat^2/occasion[i])
       } else { # Raw score ICC
         icc <- var.mu / (var.mu + shat^2)
