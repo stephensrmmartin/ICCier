@@ -19,6 +19,10 @@ functions {
     for(k in 1:K){
       cov[k] = quad_form_diag(Omega,mu_gamma_group_random_sd[k]);
     }
+    // Orig. author takes average numerator; we do not.
+    // This is different: I use mean_ICC = E(Var / (Var + ErrVar))
+    // They use mean_ICC = E(Var) / (E(Var) + ErrVar)
+    // I use mean predicted ICC; they have ICC of mean values.
     for(n in 1:N){
       numerator[n] = x_loc_l1[n,] * cov[group[n]][1:Q_l1,1:Q_l1] * x_loc_l1[n,]';
     }
