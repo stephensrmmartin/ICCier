@@ -40,7 +40,7 @@ summary.ICCier <- function(object,prob=.95,...){
   iter$total <- iter$post*chains
   K <- object$stan_data$K
   N <- object$stan_data$N
-  meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K,digits=digits)
+  meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K,digits=digits,type=object$type)
 
   estimate <- list(beta = t(beta$mu),
                 gamma = t(gamma$gamma),
@@ -90,6 +90,7 @@ summary.ICCier <- function(object,prob=.95,...){
 #' @keywords internal
 print.ICCier <- function(object,...){
   cat('Formula:',deparse(object$formula),'\n')
+  cat('Type: ',ifelse(object$type$conditional,paste0('Conditional (',ifelse(object$type$adjusted,'Adjusted','Unadjusted'),')'),'Unconditional'),'\n')
   cat('\n')
 
 
@@ -119,6 +120,7 @@ print.summary.ICCier <- function(object,...){
   }
 
   cat('Formula:',deparse(object$formula),'\n')
+  cat('Type: ',ifelse(object$meta$type$conditional,paste0('Conditional (',ifelse(object$meta$type$adjusted,'Adjusted','Unadjusted'),')'),'Unconditional'),'\n')
   cat('Number of observations:', object$meta$N,'\n')
   cat('Number of groups:',object$meta$K,'\n')
   cat('\n--------------------\n')
