@@ -85,8 +85,8 @@ model {
   // Priors
   to_vector(mu_gamma_group_random_z) ~ std_normal();
   mu_gamma_group_random_cor_L ~ lkj_corr_cholesky(1);
-  to_vector(eta) ~ std_normal();
-  to_vector(gamma) ~ std_normal();
+  to_vector(eta) ~ student_t(3,0,5);
+  to_vector(gamma) ~ student_t(3,0,5);
   to_vector(beta0) ~ normal(0,10);
 
   // Likelihood
