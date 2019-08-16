@@ -32,6 +32,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   if(is.null(data)){
    return(fitted(object,summary,prob,inc_group))
   }
+  newdata <- as.data.frame(newdata)
   total_iter <- nsamples(object)
   if(is.null(draws)){
     draws <- total_iter
