@@ -22,8 +22,8 @@ ICCier object. List containing the model formula, data, stan_data, model fit, an
 Runs the MELSM model and returns an ICCier object.
 }
 \details{
-\code{ICCier} uses the mixed effects location scale model to estimate an intercept-only
-location model with random effect of person.
+\code{ICCier} uses the mixed effects location scale model to estimate an unconditional
+(intercept-only) or conditional location model with random effect of person.
 The within-person variances (i.e., residual, or error variances) are log-linearly modelled from a set of observation-level and
 person-level predictors, with coefficients \eqn{\gamma}.
 The between-person variances are also log-linearly modelled from a set of person-level predictors,
@@ -31,7 +31,11 @@ with coefficients \eqn{\eta}.
 
 The formula syntax is as follows:
 
+For an unconditional model:
 \code{outcome | personID ~ Level_1_formula | Level_2_formula}
+
+For a conditional model:
+\code{outcome | personID ~ Level_1_formula | Level_2_formula | Level_1_conditional | Level_2_conditional}
 
 The model is implemented in a 'maximal' manner, meaning \emph{all} level 1 effects are assumed to randomly vary and correlate.
 Moreover, \emph{all} level 2 variables predict each level 1 parameter.
@@ -39,5 +43,16 @@ This means you \emph{should not include cross-level interaction terms}, because 
 Level 1 or Level 2 interaction terms may be included.
 
 For now, the Level 2 formula predicts both the level 1 scale parameters, as well as the level 2 random effect variances.
-If you wish to only have person-specific IICs, use \code{1} as the level 1 formula (intercept-only).
+If you wish to only have person-specific ICCs, use \code{1} as the level 1 formula (intercept-only).
+
+When using a \emph{conditional} model, the default ICCs are "unadjusted".
+In our case, the "unadjusted" ICC is still the random intercept variance divided by
+the random intercept variance and error variance.
+This makes sense, if the location model(s) are meant to be controlling variables.
+If you wish to have the so-called \emph{adjusted} ICC, use \code{adjusted = TRUE}.
+The \emph{adjusted} ICC instead uses the expected variance due to \emph{all random factors},
+divided by itself and the error variance.
+The adjusted ICC is therefore the proportion of random variance due to the random factors.
+This makes sense if the goal is to examine individual differences, and therefore examine the
+random effects themselves.
 }

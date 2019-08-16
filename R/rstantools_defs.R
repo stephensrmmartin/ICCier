@@ -7,7 +7,6 @@
 #' @param ... Not used.
 #'
 #' @return Matrix with two columns (lower and upper) and one parameter per row.
-#' @export
 #'
 #' @keywords internal
 posterior_interval.ICCier <- function(object, prob = .95, pars, ...){

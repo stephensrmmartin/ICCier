@@ -3,8 +3,8 @@
 #'
 #' Runs the MELSM model and returns an ICCier object.
 #'
-#' \code{ICCier} uses the mixed effects location scale model to estimate an intercept-only
-#' location model with random effect of person.
+#' \code{ICCier} uses the mixed effects location scale model to estimate an unconditional
+#' (intercept-only) or conditional location model with random effect of person.
 #' The within-person variances (i.e., residual, or error variances) are log-linearly modelled from a set of observation-level and
 #' person-level predictors, with coefficients \eqn{\gamma}.
 #' The between-person variances are also log-linearly modelled from a set of person-level predictors,
@@ -12,7 +12,11 @@
 #'
 #' The formula syntax is as follows:
 #'
+#' For an unconditional model:
 #' \code{outcome | personID ~ Level_1_formula | Level_2_formula}
+#'
+#' For a conditional model:
+#' \code{outcome | personID ~ Level_1_formula | Level_2_formula | Level_1_conditional | Level_2_conditional}
 #'
 #' The model is implemented in a 'maximal' manner, meaning \emph{all} level 1 effects are assumed to randomly vary and correlate.
 #' Moreover, \emph{all} level 2 variables predict each level 1 parameter.
@@ -20,7 +24,18 @@
 #' Level 1 or Level 2 interaction terms may be included.
 #'
 #' For now, the Level 2 formula predicts both the level 1 scale parameters, as well as the level 2 random effect variances.
-#' If you wish to only have person-specific IICs, use \code{1} as the level 1 formula (intercept-only).
+#' If you wish to only have person-specific ICCs, use \code{1} as the level 1 formula (intercept-only).
+#'
+#' When using a \emph{conditional} model, the default ICCs are "unadjusted".
+#' In our case, the "unadjusted" ICC is still the random intercept variance divided by
+#' the random intercept variance and error variance.
+#' This makes sense, if the location model(s) are meant to be controlling variables.
+#' If you wish to have the so-called \emph{adjusted} ICC, use \code{adjusted = TRUE}.
+#' The \emph{adjusted} ICC instead uses the expected variance due to \emph{all random factors},
+#' divided by itself and the error variance.
+#' The adjusted ICC is therefore the proportion of random variance due to the random factors.
+#' This makes sense if the goal is to examine individual differences, and therefore examine the
+#' random effects themselves.
 #'
 #' @param formula Formula representing the model. See details.
 #' @param data Data frame containing all variables.
@@ -55,13 +70,37 @@ ICCier <- function(formula, data, ...){
   }
 
   d <- .parse_formula(formula, data)
-  args <- c(list(object=stanmodels$melsmICC, data=d$stan_data,
+  if(d$conditional){
+    model <- stanmodels$melsmCondICC
+  } else {
+    model <- stanmodels$melsmICC
+  }
+  if(!is.null(dots$adjusted)){
+    adjusted <- dots$adjusted
+    if(!is.logical(adjusted)) {
+      stop('"adjusted" must be TRUE/FALSE.')
+    }
+    if(!d$conditional){
+      warning("'adjusted' is not applicable when using an unconditional model. Ignoring argument.")
+      adjusted <- FALSE
+    }
+    d$stan_data$adjust_icc <- as.numeric(adjusted)
+    dots$adjusted <- NULL
+  } else {
+    adjusted <- FALSE
+    d$stan_data$adjust_icc <- as.numeric(adjusted)
+  }
+
+  args <- c(list(object=model, data=d$stan_data,
             pars = c('beta0','gamma','eta','mu_group','gamma_group','icc','log_lik','Omega','icc_mean','icc_sd')),
             dots)
   stanOut <- do.call('sampling',args=args)
-  out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map)
+
+  out <- list(formula=Formula(formula), data=d$model.frame, stan_data = d$stan_data,fit=stanOut, group_map = d$group_map,type=list(conditional=d$conditional,adjusted=adjusted))
+
   diagnostics <- .get_diagnostics(out)
   out$diagnostics <- diagnostics
+
   class(out) <- c('ICCier')
   return(out)
 }
@@ -82,11 +121,16 @@ ICCier <- function(formula, data, ...){
 
   f <- Formula::Formula(formula)
   length.f <- length(f)
+  conditional <- length.f[2] > 2
+
   if(length.f[1] != 2){
     stop('Both the outcome and person-level indicator variables must be specified.')
   }
-  if(length.f[2] != 2){
+  if(length.f[2] < 2){
     stop('Both the level 1 and level 2 formulas must be specified.')
+  }
+  if(length.f[2] < 4 & conditional){
+    stop('If specifying a location model, both level 1 and level 2 formulas must be specified.')
   }
   fnames <- attr(terms(f),'term.labels')
 
@@ -113,26 +157,38 @@ ICCier <- function(formula, data, ...){
   x_sca_l1 <- model.matrix(f, mf, rhs=1)
   P_l1 <- ncol(x_sca_l1)
 
+  if(conditional){
+    f.location <- Formula(formula(f,rhs=c(3,4),lhs=0))
+  } else{
+    f.location <- Formula(~1|1)
+  }
+  x_loc_l1 <- model.matrix(f.location,mf,rhs=1)
+  Q_l1 <- ncol(x_loc_l1)
+
   if(predict){
     # Leave matrix as-is for prediction.
     x_sca_l2 <- model.matrix(f,mf,rhs=2)
+    x_loc_l2 <- model.matrix(f.location,mf,rhs=2)
     group$group_L2 <- group$group_L1
   } else {
-    x_sca_l2.mf <- model.frame(f,mf,lhs=2,rhs=2)
-    x_sca_l2 <- as.data.frame(do.call(rbind,lapply(split(x_sca_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
-    x_sca_l2 <- x_sca_l2[order(x_sca_l2[,1]),-1,drop=FALSE]
-    x_sca_l2 <- model.matrix(f,x_sca_l2,rhs=2)
+    x_l2.mf <- model.frame(f,mf,lhs=2)
+    x_l2 <- as.data.frame(do.call(rbind,lapply(split(x_l2.mf,f=group$group_L1$group_numeric),function(x){x[1,]})))
+    x_l2 <- x_l2[order(x_l2[,1]),-1,drop=FALSE]
+
+    x_sca_l2 <- model.matrix(f,x_l2,rhs=2)
+    x_loc_l2 <- model.matrix(f.location,x_l2,rhs=2)
   }
   P_l2 <- ncol(x_sca_l2)
+  Q_l2 <- ncol(x_loc_l2)
 
   if(predict){
     y <- NA
   } else {
     y <- mf[,fnames[1]]
   }
-  stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y'))
+  stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y','Q_l1','Q_l2','x_loc_l1','x_loc_l2'))
   stan_data$group <- group$group_L1$group_numeric
-  return(list(stan_data=stan_data,group_map = group, model.frame = mf))
+  return(list(stan_data=stan_data,group_map = group, model.frame = mf,conditional=conditional))
 }
 
 .get_diagnostics <- function(object){

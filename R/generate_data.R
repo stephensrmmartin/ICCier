@@ -17,32 +17,31 @@
 #' @keywords internal
 datagen <- function(n,K,beta,gamma,eta,cor_structure){
   N <- n*K
-  P <- nrow(beta)
-  Q <- nrow(gamma)
-  P_random <- 1
-  Q_random <- ncol(gamma)
+  Q <- nrow(beta)
+  P <- nrow(gamma)
+  Q_random <- ncol(beta)
+  P_random <- ncol(gamma)
   # P_random <- length(beta_sigma)
   # Q_random <- length(gamma_sigma)
   group <- rep(1:K,each=n)
 
-  if(ncol(beta) != P_random | ncol(gamma) != Q_random) {
+  if(ncol(beta) != Q_random | ncol(gamma) != P_random) {
     stop('Mismatch between number of beta/gamma cols and implied number of random effects in beta_sigma/gamma_sigma\n.')
   }
 
   ## Create cor matrix
   Omega <- matrix(0,P_random + Q_random, P_random + Q_random)
   diag(Omega) <- 1
-  corMag <- c(0,.2,.5)
-  Omega[1:P_random,1:P_random][lower.tri(Omega[1:P_random,1:P_random])] <- cor_structure[1]
-  Omega[(P_random + 1):nrow(Omega),(P_random + 1):ncol(Omega)][lower.tri(Omega[(P_random + 1):nrow(Omega),(P_random + 1):ncol(Omega)])] <- cor_structure[3]
-  Omega[(P_random + 1):nrow(Omega), 1:P_random] <- cor_structure[2]
+  Omega[1:Q_random,1:Q_random][lower.tri(Omega[1:Q_random,1:Q_random])] <- cor_structure[1]
+  Omega[(Q_random + 1):nrow(Omega),(Q_random + 1):ncol(Omega)][lower.tri(Omega[(Q_random + 1):nrow(Omega),(Q_random + 1):ncol(Omega)])] <- cor_structure[3]
+  Omega[(Q_random + 1):nrow(Omega), 1:Q_random] <- cor_structure[2]
   Omega <- forceSymmetric(Omega,'L')
   Omega <- as.matrix(Omega)
   betaGamma_random_cor_L <- t(chol(Omega)) # Confusingly, this is now L tri, not U tri like usual. The hell, R?
 
   ## Generate L1 effects
-  X_loc_l2 <- matrix(1,K,1)
-  X_sca_l2 <- mvtnorm::rmvnorm(K,sigma=diag(1,Q,Q))
+  X_loc_l2 <- mvtnorm::rmvnorm(K,sigma=diag(1,Q,Q))
+  X_sca_l2 <- mvtnorm::rmvnorm(K,sigma=diag(1,P,P))
   X_loc_l2[,1] <- 1
   X_sca_l2[,1] <- 1
 
@@ -53,14 +52,15 @@ datagen <- function(n,K,beta,gamma,eta,cor_structure){
     betaGamma_random[i,] = betaGamma_random_z[i,]%*%t(diag(betaGamma_random_sigma[i,]) %*% betaGamma_random_cor_L)
   }
   betaGamma <- cbind(X_loc_l2%*%beta, X_sca_l2%*%gamma) + betaGamma_random
-  beta_group <- betaGamma[,1:P_random,drop=FALSE]
-  gamma_group <- betaGamma[,(P_random + 1):ncol(betaGamma),drop=FALSE]
+  beta_group <- betaGamma[,1:Q_random,drop=FALSE]
+  gamma_group <- betaGamma[,(Q_random + 1):ncol(betaGamma),drop=FALSE]
 
 
   ## Generate L1 observations
-  X_loc_l1 <- matrix(1,N,1)
-  X_sca_l1 <- mvtnorm::rmvnorm(N,sigma=diag(1,nrow=Q_random,ncol=Q_random))
+  X_loc_l1 <- mvtnorm::rmvnorm(N,sigma=diag(1,nrow=Q_random,ncol=Q_random))
+  X_sca_l1 <- mvtnorm::rmvnorm(N,sigma=diag(1,nrow=P_random,ncol=P_random))
   X_sca_l1[,1] <- 1
+  X_loc_l1[,1] <- 1
   # X_loc_l1 <- cbind(1,mvtnorm::rmvnorm(N,sigma=diag(1,nrow=P_random-1,ncol=P_random-1)))
   # X_sca_l1 <- cbind(1,mvtnorm::rmvnorm(N,sigma=diag(1,nrow=Q_random-1,ncol=Q_random-1)))
 
@@ -70,7 +70,7 @@ datagen <- function(n,K,beta,gamma,eta,cor_structure){
   ## Package up
   params <- list(beta=beta,gamma=gamma,eta=eta,Omega=Omega,betaGamma_random_cor_L=betaGamma_random_cor_L,beta_group=beta_group,gamma_group=gamma_group,betaGamma_random=betaGamma_random,betaGamma_random_sigma = betaGamma_random_sigma,icc=icc)
   meta <- list(n=n,K=K,N=N,P=P,Q=Q,P_random=P_random,Q_random=Q_random)
-  data <- list(n=n,K=K,N=N,P=P,P_l2=Q,P_l1=P_random,Q_random=Q_random,y=y,x_loc_l2=X_loc_l2,x_sca_l2=X_sca_l2,x_loc_l1=X_loc_l1,x_sca_l1=X_sca_l1,group=group)
+  data <- list(n=n,K=K,N=N,P_l2=P,P_l1=P_random,Q_l1 = Q_random, Q_l2 = Q,y=y,x_loc_l2=X_loc_l2,x_sca_l2=X_sca_l2,x_loc_l1=X_loc_l1,x_sca_l1=X_sca_l1,group=group)
   list(params=params,meta=meta,data=data)
 
 }
@@ -96,9 +96,18 @@ generate_df <- function(n,K,beta,gamma,eta,cor_structure){
 }
 
 convert_datagen <- function(d){
-  ds <- data.frame(y=d$data$y,x_L1=d$data$x_sca_l1,group=d$data$group)
+  ds <- data.frame(y=d$data$y,group=d$data$group)
+  if(d$meta$P_random > 1){
+    ds[,paste0('sca_l1.',1:(d$meta$P_random - 1))] <- d$data$x_sca_l1[,2:d$meta$P_random]
+  }
+  if(d$meta$Q_random > 1){
+    ds[,paste0('loc_l1.',1:(d$meta$Q_random - 1))] <- d$data$x_loc_l1[,2:d$meta$Q_random]
+  }
+  if(d$meta$P > 1){
+    ds[,paste0('sca_l2.',1:(d$meta$P - 1))] <- d$data$x_sca_l2[d$data$group,2:d$meta$P]
+  }
   if(d$meta$Q > 1){
-    ds[,paste0('x_L2.',1:(d$meta$Q - 1))] <- d$data$x_sca_l2[ds$group,-1]
+    ds[,paste0('loc_l2.',1:(d$meta$Q - 1))] <- d$data$x_loc_l2[d$data$group,2:d$meta$Q]
   }
   return(ds)
 }
