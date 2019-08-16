@@ -1,6 +1,6 @@
 Package: ICCier
 Title: Computes ICCs, per person, or per observation, using the Bayesian mixed effects location scale model
-Version: 0.0.0.9140
+Version: 0.0.0.9200
 Authors@R: 
     person(given = "Stephen",
            family = "Martin",
