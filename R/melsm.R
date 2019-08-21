@@ -188,6 +188,7 @@ ICCier <- function(formula, data, ...){
   }
   stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y','Q_l1','Q_l2','x_loc_l1','x_loc_l2'))
   stan_data$group <- group$group_L1$group_numeric
+  mf[,fnames[2]] <- group$group_L1[,fnames[2]]
   return(list(stan_data=stan_data,group_map = group, model.frame = mf,conditional=conditional))
 }
 
