@@ -3,3 +3,6 @@
 *.so
 *.hpp
 .Rhistory
+inst/doc
+doc
+Meta
