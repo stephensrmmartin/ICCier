@@ -1,0 +1,314 @@
+---
+title: "ICCier"
+author: "Stephen R. Martin"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ICCier}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Background
+`ICCier` is a package for computing intraclass correlation coefficients (ICC) for specific groups.
+The basic ICC can be written as:
+$$
+\text{ICC}(1) = \frac{\sigma^2_b}{\sigma^2_b + \sigma^2_e}
+$$
+In this formula, $\sigma^2_b$ is the variance between groups, and $\sigma^2_e$ is the error, or within-group variance.
+The variance components can be obtained through a variance decomposition framework (e.g., ANOVA), or through multilevel models.
+The ICC represents the proportion of total variance that is due to between-group variation.
+It can also be thought of as a reliability estimate, or the expected correlation between any two scores within the same group.
+
+However, the ICC assumes that the between-variance (numerator) and error variance (second term in the denominator) are constant across all groups.
+Because the variances are assumed fixed, the ICC is assumed fixed.
+These assumptions are unnecessarily restrictive.
+
+That is, some groups may have greater (or lesser) reliability than other groups.
+If a group has a smaller $\sigma^2_e$, then that group has a greater ICC.
+Similarly, if variance between groups ($\sigma^2_b$) varies along a group-level covariate, then perhaps those high in the covariate are expected to have greater variance, and therefore higher ICCs.
+
+`ICCier` allows researchers to estimate these varying ICCs.
+We use the mixed effects location scale model (MELSM) to model both the between-group variance and the within-group variance as a function of covariates, if they are available.
+At minimum, `ICCier` simply permits error variance to itself vary across the groups.
+
+That is, `ICCier` estimates specific ICCs:
+$$
+\text{ICC}(1)_i = \frac{\hat\sigma^2_{b,i}}{\hat\sigma^2_{b,i} + \hat\sigma^2_{e,i}}
+$$
+It also models the components within the ICC(2):
+$$
+\text{ICC}(2)_i = \frac{\hat\sigma^2_{b,i}}{\hat\sigma^2_{b,i} + \frac{\hat\sigma^2_{e,i}}{n_i}}
+$$
+Even further, it estimates per-observation predicted ICC:
+$$
+\text{ICC}(1)_{ij} = \frac{\hat\sigma^2_{b,i}}{\hat\sigma^2_{b,i} + \hat\sigma^2_{e,ij}}
+$$
+This can of course be extended to per-observation predicted ICC(2):
+$$
+\text{ICC}(2)_{ij} = \frac{\hat\sigma^2_{b,i}}{\hat\sigma^2_{b,i} + \frac{\hat\sigma^2_{e,ij}}{n_{ij}}}
+$$
+This latter form allows researchers to examine the accumulative reliability over time.
+E.g., one may find that most people attain a reliability greater than .8 after only 20 trials, which can inform future experiments.
+
+It estimates both unconditional and conditional ICCs.
+Unconditional ICCs have a random mean for each group, and therefore reflect the proportion of variance due to random means.
+Conditional ICCs reflect the proportion of variance that is due to random *intercepts* (when `adjusted = FALSE`) or proportion of variance due to random *intercepts and slopes* (when `adjusted = TRUE`), after controlling for covariates.
+These are all discussed in turn, through numerous examples.
+First, we discuss the MELSM that underlies `ICCier`.
+
+# The underlying model
+The mixed effects location scale model (or MELSM, for short) is the engine that allows us to model the variance components of each ICC.
+The MELSM is an extended form of the normal-assumptive multilevel model.
+The traditional multilevel model imposes a linear model on the expected response, or the "location" of the response.
+The intercept and certain covariates are assumed to randomly vary across groups.
+The random variance and error variance are then estimated, but assumed fixed across the groups.
+
+The MELSM does not constrain the random variance nor the error variance to be constant across groups.
+Instead, the MELSM directly models the variance components.
+The error variance may randomly vary across groups and across covariates.
+Likewise, the variance between groups may vary across covariates.
+We implement a *maximal* version of this model, meaning all possible cross-level interactions are assumed, and all possible random effects covary.
+The model is detailed below.
+
+Let $y_{ij}$ be the $j$th response of the $i$th group or person.
+Let $\boldsymbol{x}$ be a design matrix at the within-group level, and $\boldsymbol{X}$ be a design matrix at the between-group level.
+All within-group level (level 1) coefficients are assumed to randomly vary across groups, and each are predicted by the level 2 predictors in $\boldsymbol{X}$.
+$$
+\begin{align}
+  \text{L1 Location}: & y_{ij} = \boldsymbol{x}_{ij}\boldsymbol{\beta}_i + \epsilon_{ij} \\
+  \hline \\
+  \text{L2 Location}: & 
+    \begin{matrix}
+      \beta_{0i} = &\boldsymbol{X}_iB_0 + & u_{0i}\\
+      \beta_{1i} = &\boldsymbol{X}_iB_1 + & u_{1i}\\
+      \vdots & \vdots & \vdots\\
+      \beta_{Qi} = &\boldsymbol{X}_iB_Q + & u_{Qi}\\
+    \end{matrix} \\
+  
+\end{align}
+$$
+
+Because *all* level 1 coefficients randomly vary, and *all* are predicted by the level 2 variables, this defines a *maximal* location model.
+All random effects ($u_{qi}$) will also covary.
+
+The MELSM extends this model by imposing additional structure on the variances.
+First, the error variances are log-linearly modeled in a manner that is parallel to the location model.
+Let $\boldsymbol{z}$ be a design matrix at the within-group level, and $\boldsymbol{Z}$ be a design matrix at the between-group level.
+$$
+\epsilon_{ij} \sim \mathcal{N}(0, \hat\sigma_{ij}), \hat\sigma_{ij}^2 = \text{Var}(\epsilon_{ij})
+$$
+$$
+\begin{align*}
+  \text{L1 Scale}:& \hat\sigma_{ij} = \exp(\boldsymbol{z}_{ij}\boldsymbol{\gamma}_i )\\
+  \hline
+  \text{L2 Scale}:& 
+    \begin{matrix}
+      \gamma_{0i} = &\boldsymbol{Z}_i\Gamma_0 + & u^\sigma_{0i}\\
+      \gamma_{1i} = &\boldsymbol{Z}_i\Gamma_1 + & u^\sigma_{1i}\\
+      \vdots & \vdots & \vdots\\
+      \gamma_{Pi} = &\boldsymbol{Z}_i\Gamma_P + & u^\sigma_{Pi}\\
+    \end{matrix} \\
+\end{align*}
+$$
+The within-person standard deviation is therefore predicted with within-person variables ($z_i$).
+When exponentiated, this produces a predicted standard deviation for the given group and observation.
+Each level 1 coefficient ($\gamma_{pi}$) is then predicted from the level 2 covariates ($Z_i$), and assumed to randomly vary across groups.
+All random effects ($u^\sigma_{pi}$) are again assumed to covary.
+
+Moreover, the random location and scale effects are permitted to covary, and assumed multivariate normally distributed.
+$$
+\begin{bmatrix}
+  \boldsymbol{u_i} \\
+  \boldsymbol{u^\sigma_i}
+\end{bmatrix} \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{\Sigma_i})
+$$
+The covariance matrix encodes both how variable each random effect is, and how each random effect covaries with all other random effects.
+We employ the separation strategy to estimate $\Sigma_i$, such that $\boldsymbol{\Sigma}_i = \boldsymbol{\sigma_i}\boldsymbol{\Omega}\boldsymbol{\sigma_i}$.
+$\Omega$ is the correlation matrix for the random effects, and $\boldsymbol{\sigma_i}$ is a diagonal matrix of random effect standard deviations.
+
+Just as the within-person SD is modeled, we also model the between-person SD.
+To do this, we model the diagonal elements with an additional log-linear model.
+Currently, we use the level 2 scale design matrix above ($\boldsymbol{Z_i}$) as covariates for the between person SDs.
+$$
+\begin{matrix}
+  \sigma_{11} &=& \exp(\boldsymbol{Z_i\eta_1}) \\
+  \sigma_{22} &=& \exp(\boldsymbol{Z_i\eta_2}) \\
+  \vdots &=& \vdots \\
+  \sigma_{QQ} &=& \exp(\boldsymbol{Z_i\eta_Q}) \\
+  \sigma_{Q+1,Q+1} &=& \exp(\boldsymbol{Z_i\eta_{Q+1}}) \\
+  \sigma_{Q+2,Q+2} &=& \exp(\boldsymbol{Z_i\eta_{Q+2}}) \\
+  \vdots &=& \vdots \\
+  \sigma_{Q+P,Q+P} &=& \exp(\boldsymbol{Z_i\eta_{Q+P}}) \\
+\end{matrix}
+$$
+
+From this model, we therefore can model the
+
+1. Expected value (location), with random effects.
+1. Residual standard deviation (scale of errors), with random effects.
+1. Between-group standard deviation (scale of random effects)
+
+This provides the pieces needed to compute the ICC for each person, and each observation.
+We provide examples below from simple to complex.
+
+# Unconditional, intercept-only
+The unconditional, intercept-only model implies that the *location* model only has random intercepts (unconditional), and the *scale* model only has random intercepts (intercept-only).
+That is, the MELSM is specified as
+$$
+\begin{align*}
+  y_{ij} &= \beta_{0i} + e_{ij},e_{ij} \sim \mathcal{N}(0, \sigma_{i}) \\
+  \beta_{0i} &= B_{00} + u_{0i} \\
+  \sigma_{e,i} &= \exp(\Gamma_{00} + u^\sigma_{0i}) \\
+  \begin{bmatrix}
+    u_{0i} \\
+    u^\sigma_{0i} 
+  \end{bmatrix} &\sim \mathcal{N}(0, \boldsymbol{\sigma_i\Omega\sigma_i}) \\
+  \sigma_{i,11} &= \exp(\eta_{1}) \\
+  \sigma_{i,22} &= \exp(\eta_{2}) \\
+\end{align*}
+$$
+Recall that the ICC(1)_i equation is:
+$$
+\text{ICC}(1)_i = \frac{\hat\sigma^2_{b,i}}{\hat\sigma^2_{b,i} + \hat\sigma^2_{e,i}}
+$$
+Plugging in the modeled values
+Therefore, the equation looks as follows:
+$$
+\text{ICC}(1)_i = \frac{\exp(\eta_1)^2}{\exp(\eta_1)^2 + \exp(\Gamma_{00} + u^\sigma_{0i})^2}
+$$
+
+## ICCier example
+For this example, we will use the `sleepstudy` data from `lme4`.
+The outcome is `Reaction`, which we will standardize.
+```{r, results='asis'}
+library(knitr)
+library(ICCier)
+data(package='lme4','sleepstudy')
+sleepstudy$Reaction <- as.vector(scale(sleepstudy$Reaction))
+
+kable(head(sleepstudy))
+
+```
+
+`ICCier` takes a formula and a data frame.
+The formula has the following format:
+
+`outcome | group ~ level1Scale | level2Scale | level1Location | level2Location`
+
+Because we are fitting an unconditional model, the last two formulas are not necessary, and can be excluded.
+That leaves us with:
+
+`outcome | group ~ level1Scale | level2Scale`
+
+Furthermore, we are fitting an intercept only model.
+Therefore the fitting process is as follows.
+```{r, message=FALSE, warning=FALSE}
+iccOut.int.ss <- ICCier(Reaction | Subject ~ 1 | 1, data=sleepstudy)
+
+```
+
+`ICCier` has several methods implemented.
+These can be listed using:
+```{r}
+methods(class=class(iccOut.int.ss))
+
+```
+
+The `summary` method returns a summary of the MELSM model.
+```{r}
+summary(iccOut.int.ss)
+
+```
+
+The output is broken down into multiple sections.
+The top section describes the model and type of ICC computed.
+The total number of observations is the number of *complete* level 1 observations.
+Incomplete data is dropped from the originating data frame.
+The number of groups is the number of unique groups defined by the `group` component of the formula.
+In this case, there are 18 unique subjects, each measured 10 times. 
+Therefore there are 18 groups, and 180 total observations.
+
+The second section provides diagnostics.
+`ICCier` uses Stan (via `rstan`) for posterior sampling, and therefore uses the diagnostics available from it.
+Rhat is the potential scale reduction factor.
+Every parameter should have an Rhat of approximately 1.
+If every parameter has Rhat < 1.1, then the diagnostic will say `passed`; if not, then it will print the 10 parameters with the highest Rhat values.
+If you do not pass the `Rhat` diagnostic, then the chains *have not converged*, and you should not interpret the model.
+The second diagnostic is `divergent transitions`; if there are no divergences, then this will say `passed`. 
+If there are divergences, then the sampler encountered problematic regions in posterior space.
+In other words, you should be wary of the model estimates, because the sampler likely encountered regions wherein it got 'stuck' or could not pass through.
+Consequently, the posterior may be biased, and is no longer guaranteed to have convergent properties.
+
+In the third section are the coefficients for the location model, the within-group scale model, and the between-group scale model.
+These coefficients are structured as implied by the MELSM equations above.
+In this unconditional model example, the location model is simply a randomly-varying mean model.
+The output suggests the fixed (i.e., expected, average) mean has a posterior expected value (EAP) of approximately zero.
+Similarly, the fixed within-person scale has a (log) EAP of approximately -.4.
+That suggests the expected residual standard deviation is approximately $\exp(-.4) = .67$.
+The between-person section provides the estimates for between-person SD in the random effects.
+For example, the mean varies across subjects with an SD of $\exp(-.43) = .65$.
+Similarly, the (log) residual SD varies across subjects with an SD of $\exp(-.76) = .47$.
+
+ICCier estimates the ICC for every row in the data.
+In this example, the ICC only varies across subjects.
+Therefore, the ICC is the same for each row within subject.
+To see this, we can use the `fitted` function.
+```{r}
+kable(head(fitted(iccOut.int.ss)))
+
+```
+
+The `mean` column provides the posterior mean and (by default) 95\% quantile intervals for each ICC.
+In the sampled population, the expected ICC is .48, with a SD of .19 (see the summary output above).
+This implies that the ICC is not homogenous, but varies considerably across subjects.
+
+We can visualize this variance using ggplot.
+```{r, fig.width=6,fig.height=4,message=FALSE,error=FALSE,warning=FALSE}
+library(ggplot2)
+library(performance)
+library(lme4)
+library(dplyr)
+icc.lme4 <- icc(lmer(Reaction ~ 1 + (1|Subject),data=sleepstudy))
+fitted(iccOut.int.ss) %>% ggplot(aes(x=Subject,y=mean,ymin=`2.5%`,ymax=`97.5%`)) +
+  geom_pointrange() +
+  scale_y_continuous(limits=c(0,1)) +
+  theme_bw() + 
+  geom_hline(yintercept=.48,linetype='dashed') +
+  labs(y='ICC') +
+  geom_hline(yintercept=icc.lme4$ICC_conditional,linetype='dotted')
+
+```
+
+In order to compare ICCier's mean estimate (dashed) to the traditional method, we use the `performance` package to compute the fixed ICC (dotted).
+The mean estimates are similar, but more importantly, there is indeed considerable variability around the expected ICC.
+
+The ICC(2) can be computed from this model.
+The ICC(2) reflects the reliability in the *mean* estimate.
+Instead of representing the proportion of variance in scores due to the mean, the ICC(2) reflects the proportion of variance in mean estimates that is due to true mean variance.
+The denominator includes the expected error variance of the mean ($\sigma^2_{e,i}/n$), rather than merely the expected error variance of the scores.
+
+The `fitted` function takes an `occasion` argument.
+This argument provides the $n_i$ in the mean error variance formula.
+Although $n_i$ could be constant within each subject, we can use the `Days` variable to plot how mean score reliability increases over time.
+```{r,results='asis'}
+sleepstudy$occasion <- sleepstudy$Days + 1
+kable(head(sleepstudy))
+icc2 <- fitted(iccOut.int.ss,occasion=sleepstudy$occasion)
+
+icc2 %>% ggplot(aes(x=sleepstudy$occasion,y=mean,ymin=`2.5%`,ymax=`97.5%`,color=Subject)) +
+  geom_line() +
+  theme_bw() +
+  scale_y_continuous(limits=c(0,1)) +
+  labs(y='ICC(2)',x='Occasion') + 
+  guides(color=FALSE) 
+
+```
+
