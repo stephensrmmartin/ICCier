@@ -1,6 +1,7 @@
 Package: ICCier
-Title: Computes ICCs, per person, or per observation, using the Bayesian mixed effects location scale model
+Title: Estimate and Predict Per-Group and Per-Observation ICCs
 Version: 0.0.0.9200
+Date: 2019-08-21
 Authors@R: 
     c(person(given = "Stephen R.",
            family = "Martin",
@@ -16,7 +17,9 @@ Authors@R:
                 role = "aut",
                 email = "prast@ucdavis.edu")
     )
-Description: Computes group-specific and observation-specific intraclass correlations (ICCs).
+Description: Estimate group-specific and observation-specific intraclass correlations (ICCs). A maximal mixed effects location scale model (MELSM) is used to predict the variance components of the ICC. Per-group and per-observation ICCs are estimated. Various ICCs are supported (e.g., unconditional, conditional, adjusted, ICC(1), ICC(2)). ICCs can be predicted across both within-group and between-group covariates. Due to the Bayesian framework, posterior intervals for the ICCs are available. Models can be compared using leave-one-out cross-validation.
+URL: https://github.com/stephensrmmartin/ICCier
+BugReports: https://github.com/stephensrmmartin/ICCier/issues
 License: GPL (>=3)
 Depends: 
     methods,
