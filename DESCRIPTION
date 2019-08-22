@@ -2,12 +2,21 @@ Package: ICCier
 Title: Computes ICCs, per person, or per observation, using the Bayesian mixed effects location scale model
 Version: 0.0.0.9200
 Authors@R: 
-    person(given = "Stephen",
+    c(person(given = "Stephen R.",
            family = "Martin",
            role = c("aut", "cre"),
            email = "stephenSRMMartin@gmail.com"
-           )
-Description: Computes intraclass correlations (ICCs). This can be in general (classic ICC), per person, or per observation within persons.
+           ),
+        person(given = "Donald R.",
+                family = "Williams",
+                role = "aut",
+                email = "drwwilliams@ucdavis.edu"),
+        person(given = "Philippe",
+                family = "Rast",
+                role = "aut",
+                email = "prast@ucdavis.edu")
+    )
+Description: Computes group-specific and observation-specific intraclass correlations (ICCs).
 License: GPL (>=3)
 Depends: 
     methods,
