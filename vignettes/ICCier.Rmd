@@ -13,7 +13,10 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width=6,fig.height=4
+  fig.width=6,fig.height=4,
+  message=FALSE,
+  error=FALSE,
+  warning=FALSE
 )
 ```
 
@@ -165,7 +168,7 @@ The unconditional, intercept-only model implies that the *location* model only h
 That is, the MELSM is specified as
 $$
 \begin{align*}
-  y_{ij} &= \beta_{0i} + e_{ij},e_{ij} \sim \mathcal{N}(0, \sigma_{i}) \\
+  y_{ij} &\sim \mathcal{N}(\beta_{0i},\sigma_{i})\\
   \beta_{0i} &= B_{00} + u_{0i} \\
   \log(\sigma_{e,i}) &= \Gamma_{00} + u^\sigma_{0i} \\
   \begin{bmatrix}
@@ -312,6 +315,225 @@ icc2 %>% ggplot(aes(x=sleepstudy$occasion,y=mean,ymin=`2.5%`,ymax=`97.5%`,color=
   scale_y_continuous(limits=c(0,1)) +
   labs(y='ICC(2)',x='Occasion') + 
   guides(color=FALSE) 
+
+```
+From this, we can see that, as expected, mean-score reliability is expected to increase as the number of assessments increases.
+Nevertheless, there is variability in the ICC(2) trajectories.
+
+# Unconditional, scale model
+In the previous section, we assumed each person is expected to have a unique error variance, and therefore different ICCs.
+In this section, we assume the expected error variance itself may change across Days.
+That is, for each unit increase in Days, the within-person variance may increase or decrease.
+Because we fit the maximal model, we assume the Day effect itself may vary across persons.
+
+The ICC is therefore modeled as follows:
+$$
+\text{ICC(1)}_{ij} = \frac{\exp(\eta_1)^2}{\exp(\eta_1)^2 + \exp(\gamma_{00} + \gamma_{01}(\text{Day_ij}) + u_{0i}^\sigma + u_{1i}^\sigma(\text{Day}_{ij}))^2}
+$$
+
+## ICCier example
+```{r}
+iccOut.sca.ss <- ICCier(Reaction | Subject ~ Days | 1,data=sleepstudy)
+```
+
+```{r}
+summary(iccOut.sca.ss)
+
+cbind(sleepstudy,fitted(iccOut.sca.ss,inc_group=FALSE)) %>%
+  ggplot(aes(x=Days,y=mean,ymin=`2.5%`,ymax=`97.5%`,color=Subject,fill=Subject)) +
+  geom_ribbon(alpha=.1,color=NA) +
+  geom_point() +
+  geom_line() + 
+  theme_bw() + 
+  guides(color=FALSE,fill=FALSE) +
+  scale_y_continuous(limits=c(0,1)) +
+  scale_x_continuous(breaks=0:10) +
+  labs(y='ICC(1)')
+
+```
+
+From the summary, we can see that residual SD increases over days (.147), but the effect of days does not vary between persons ($\exp(-4.35) = .013$).
+Consequently, the ICC(1) decreases over time.
+
+However, the ICC(2)'s dependence on the number of trials may overcome the increasing residual SD.
+Here, we use `predict`, which takes the same arguments as `fitted`, but can also accept `draws` to speed up the computation.
+```{r}
+icc2 <- predict(iccOut.sca.ss,newdata=sleepstudy,occasion = sleepstudy$occasion,draws=500,inc_group=FALSE)
+
+cbind(sleepstudy,icc2) %>%
+  ggplot(aes(x=Days,y=mean,ymin=`2.5%`,ymax=`97.5%`,color=Subject,fill=Subject)) +
+  geom_ribbon(alpha=.1,color=NA) +
+  geom_point() +
+  geom_line() + 
+  theme_bw() + 
+  guides(color=FALSE,fill=FALSE) +
+  scale_y_continuous(limits=c(0,1)) +
+  scale_x_continuous(breaks=0:10) +
+  labs(y='ICC(2)')
+
+```
+From this we can see that the mean score reliability is expected to peak between 2-4 days of assessments.
+Counter-intuitively, the increasing variability across days can suggest that more data does not inherently imply greater mean score reliability.
+If one's goal were to maximize mean-score reliability in this study, then 2-4 days would be ideal.
+
+# Conditional, intercept-only
+In the previous example, we observed that the residual SD increases across days.
+However, this can occur because the mean varies across days.
+If one is interested in the reliability of the locations after *controlling* for the effect of Day on the observation, then a conditional ICC should be used.
+In this example, we will fit a conditional model, with an intercept-only scale model.
+
+The *unadjusted* ICC therefore appears as follows:
+$$
+\text{uICC(1)}_i = \frac{\exp(\eta_1)^2}{\exp(\eta_1)^2 + \exp(\gamma_{00} + u_{0i}^\sigma)^2}
+$$
+Note that this is exactly the same formula as the unconditional intercept-only model.
+However, the predictive formula changes:
+$$
+y_{ij} \sim \mathcal{N}(\beta_{0i} + \beta_{1i}(\text{Day}_{ij}), \sigma_{i})
+$$
+
+The unadjusted conditional ICC therefore estimates the proportion of random variance due to mean scores, when `Day = 0`, after removing all variability predicted by day.
+
+## ICCier example
+Conditional ICC models are specified using the longer formula:
+
+`outcome | group ~ level1Scale | level2Scale | level1Location | level2Location`
+
+Here we have a level-1 location model, and an intercept-only scale model.
+That is, there are no subject-level predictors, and each person is assumed to have their own residual SD.
+The model is fitted as follows.
+By default, `adjusted=FALSE`, and is left unspecified here.
+```{r}
+iccOut.loc.int.ss <- ICCier(Reaction | Subject ~ 1 | 1 | Days | 1, data=sleepstudy)
+
+summary(iccOut.loc.int.ss)
+cbind(sleepstudy,fitted(iccOut.loc.int.ss,inc_group=FALSE)) %>%
+  ggplot(aes(x=Subject,y=mean,ymin=`2.5%`,ymax=`97.5%`)) +
+  geom_pointrange() +
+  theme_bw() +
+  labs(y='uICC(1)') + 
+  scale_y_continuous(limits=c(0,1))
+
+```
+
+The location model section suggests that, on average, `Reaction` increases with Days ($\beta_{0} = .185$), without much variability between persons ($\eta_{2} = -2.202, \exp(\eta_2) = .11$).
+Nevertheless, the residual SD varies notably between persons, and therefore the uICC varies.
+
+To reiterate, this ICC is a specific type of ICC, reflecting the variability in means *when the predictors are at zero*.
+Therefore, these change depending on whether and how the predictors are centered, and therefore what the intercept represents.
+
+If one is interested in the ICC of a score derived after controlling for other variables, then this ICC is likely the one you want.
+However, if one is interested in the proportion of variance due to person-specific variance *as a whole*, then `adjusted=TRUE` should be used.
+The latter is more informative if the purpose of the research is to examine individual differences (i.e., the random effects), rather than adjusted mean scores.
+
+## ICCier example (adjusted)
+The adjusted ICC ($\text{aICC(1)}_i$) includes in the denominator all expected variability due to random effects.
+
+That is, instead of:
+$$
+y_{ij} = \beta_0 + \beta_1x_{ij} + u_{0i} + u_{1i}x_{ij} + e_{ij}\\
+\text{uICC}_i = \frac{\sigma^2_{u_{0i}}}{\sigma^2_{u_{0i}} + \sigma^2_{\epsilon,i}}
+$$
+the adjusted ICC assumes:
+$$
+\hat u_{ij} = u_{0i} + u_{1i}x_{ij} \\
+\text{aICC}_i = \frac{\sigma^2_{\hat u_i}}{\sigma^2_{\hat u_i} + \sigma^2_{\epsilon,i}}
+$$
+
+In other words, the numerator is the variance due to the person-specific *predicted* means, rather than person-specific *conditional* means.
+We estimate this expectation *per observation*, meaning that the adjusted ICC can vary within trials for each person.
+```{r}
+iccOut.loc.int.ss.adj <- ICCier(Reaction | Subject ~ 1 | 1 | Days | 1, data=sleepstudy,adjusted=TRUE)
+
+summary(iccOut.loc.int.ss.adj)
+cbind(sleepstudy,fitted(iccOut.loc.int.ss.adj,inc_group=FALSE)) %>%
+  ggplot(aes(x=Subject,y=mean,ymin=`2.5%`,ymax=`97.5%`)) +
+  geom_pointrange() +
+  theme_bw() +
+  labs(y='aICC(1)') + 
+  scale_y_continuous(limits=c(0,1))
+
+cbind(sleepstudy,fitted(iccOut.loc.int.ss.adj,inc_group=FALSE)) %>%
+  ggplot(aes(x=Days,y=mean,ymin=`2.5%`,ymax=`97.5%`,color=Subject,fill=Subject)) +
+  geom_ribbon(alpha=.1,color=NA) +
+  geom_point() +
+  geom_line() + 
+  theme_bw() + 
+  guides(color=FALSE,fill=FALSE) +
+  scale_y_continuous(limits=c(0,1)) +
+  scale_x_continuous(breaks=0:10) +
+  labs(y='aICC(1)')
+
+```
+
+# Conditional, scale model
+
+Let us repeat the previous conditional model, with the additional assumption that residual SD is predicted by Days.
+
+## ICCier example
+
+Note that in a prior run of the following models, divergent transitions were detected.
+To remedy this, the user can pass a more stringent tuning parameter to `rstan`: `control = list(adapt_delta = .999)`.
+```{r}
+iccOut.loc.sca.ss <- ICCier(Reaction | Subject ~ Days | 1 | Days | 1, data=sleepstudy,adjusted=FALSE,control=list(adapt_delta=.999))
+iccOut.loc.sca.ss.adj <- ICCier(Reaction | Subject ~ Days | 1 | Days | 1, data=sleepstudy,adjusted=TRUE,control=list(adapt_delta=.999))
+
+summary(iccOut.loc.sca.ss)
+summary(iccOut.loc.sca.ss.adj)
+
+cbind(sleepstudy,fitted(iccOut.loc.sca.ss,inc_group=FALSE)) %>%
+  ggplot(aes(x=Days,y=mean,ymin=`2.5%`,ymax=`97.5%`,color=Subject,fill=Subject)) +
+  geom_ribbon(alpha=.1,color=NA) +
+  geom_point() +
+  geom_line() + 
+  theme_bw() + 
+  guides(color=FALSE,fill=FALSE) +
+  scale_y_continuous(limits=c(0,1)) +
+  scale_x_continuous(breaks=0:10) +
+  labs(y='uICC(1)')
+
+cbind(sleepstudy,fitted(iccOut.loc.sca.ss.adj,inc_group=FALSE)) %>%
+  ggplot(aes(x=Days,y=mean,ymin=`2.5%`,ymax=`97.5%`,color=Subject,fill=Subject)) +
+  geom_ribbon(alpha=.1,color=NA) +
+  geom_point() +
+  geom_line() + 
+  theme_bw() + 
+  guides(color=FALSE,fill=FALSE) +
+  scale_y_continuous(limits=c(0,1)) +
+  scale_x_continuous(breaks=0:10) +
+  labs(y='aICC(1)')
+```
+
+From this, we see that `Days` does not appear to affect the residual SD, and therefore the conditional ICC does not vary across Day.
+To formalize this, we can determine whether the scale model is necessary through a model comparison.
+
+## Model comparison
+
+We recommend loading the `loo` package, which implements leave-one-out cross-validation.
+`ICCier` supports model comparisons through the `loo` function.
+
+```{r,message=FALSE,warning=FALSE,error=FALSE}
+library(loo)
+loo.sca <- loo(iccOut.loc.sca.ss)
+loo.nosca <- loo(iccOut.loc.int.ss)
+loo.sca
+loo.nosca
+compare(loo.nosca,loo.sca)
+```
+The 'elpd' is the expected log pointwise density, and the best predictive model is the highest one.
+In this case, we see that the including `Days` as a random predictor of residual SD is indeed beneficial.
+
+Although the average effect is zero, the between-person variability in the effect suggests some subjects are affected by Day.
+In order to see who has a Day effect, one can use the `ranef` function (for the subject-specific random effect) or `coef` (for the subject-specific estimate).
+For example,
+```{r}
+coefs <- coef(iccOut.loc.sca.ss)
+kable(coefs[,,'Days'])
+coefs[,,'Days'] %>% as.data.frame() %>% 
+  ggplot(.,aes(x=row.names(.),y=mean,ymin=`2.5%`,ymax=`97.5%`)) + 
+  geom_pointrange() +
+  labs(x='Subject',y='Day effect on res. SD') +
+  theme_bw()
 
 ```
 
