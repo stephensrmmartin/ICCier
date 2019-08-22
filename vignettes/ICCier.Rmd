@@ -12,7 +12,8 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width=6,fig.height=4
 )
 ```
 
@@ -107,7 +108,7 @@ $$
 $$
 $$
 \begin{align*}
-  \text{L1 Scale}:& \hat\sigma_{ij} = \exp(\boldsymbol{z}_{ij}\boldsymbol{\gamma}_i )\\
+  \text{L1 Scale}:& \log(\hat\sigma_{ij}) = \boldsymbol{z}_{ij}\boldsymbol{\gamma}_i \\
   \hline
   \text{L2 Scale}:& 
     \begin{matrix}
@@ -139,14 +140,14 @@ To do this, we model the diagonal elements with an additional log-linear model.
 Currently, we use the level 2 scale design matrix above ($\boldsymbol{Z_i}$) as covariates for the between person SDs.
 $$
 \begin{matrix}
-  \sigma_{11} &=& \exp(\boldsymbol{Z_i\eta_1}) \\
-  \sigma_{22} &=& \exp(\boldsymbol{Z_i\eta_2}) \\
+  \log(\sigma_{11}) &=& \boldsymbol{Z_i\eta_1} \\
+  \log(\sigma_{22}) &=& \boldsymbol{Z_i\eta_2} \\
   \vdots &=& \vdots \\
-  \sigma_{QQ} &=& \exp(\boldsymbol{Z_i\eta_Q}) \\
-  \sigma_{Q+1,Q+1} &=& \exp(\boldsymbol{Z_i\eta_{Q+1}}) \\
-  \sigma_{Q+2,Q+2} &=& \exp(\boldsymbol{Z_i\eta_{Q+2}}) \\
+  \log(\sigma_{QQ}) &=& \boldsymbol{Z_i\eta_Q} \\
+  \log(\sigma_{Q+1,Q+1}) &=& \boldsymbol{Z_i\eta_{Q+1}} \\
+  \log(\sigma_{Q+2,Q+2}) &=& \boldsymbol{Z_i\eta_{Q+2}} \\
   \vdots &=& \vdots \\
-  \sigma_{Q+P,Q+P} &=& \exp(\boldsymbol{Z_i\eta_{Q+P}}) \\
+  \log(\sigma_{Q+P,Q+P}) &=& \boldsymbol{Z_i\eta_{Q+P}} \\
 \end{matrix}
 $$
 
@@ -166,16 +167,16 @@ $$
 \begin{align*}
   y_{ij} &= \beta_{0i} + e_{ij},e_{ij} \sim \mathcal{N}(0, \sigma_{i}) \\
   \beta_{0i} &= B_{00} + u_{0i} \\
-  \sigma_{e,i} &= \exp(\Gamma_{00} + u^\sigma_{0i}) \\
+  \log(\sigma_{e,i}) &= \Gamma_{00} + u^\sigma_{0i} \\
   \begin{bmatrix}
     u_{0i} \\
     u^\sigma_{0i} 
   \end{bmatrix} &\sim \mathcal{N}(0, \boldsymbol{\sigma_i\Omega\sigma_i}) \\
-  \sigma_{i,11} &= \exp(\eta_{1}) \\
-  \sigma_{i,22} &= \exp(\eta_{2}) \\
+  \log(\sigma_{i,11}) &= \eta_{1} \\
+  \log(\sigma_{i,22}) &= \eta_{2} \\
 \end{align*}
 $$
-Recall that the ICC(1)_i equation is:
+Recall that the $\text{ICC(1)}_i$ equation is:
 $$
 \text{ICC}(1)_i = \frac{\hat\sigma^2_{b,i}}{\hat\sigma^2_{b,i} + \hat\sigma^2_{e,i}}
 $$
@@ -293,11 +294,13 @@ The mean estimates are similar, but more importantly, there is indeed considerab
 The ICC(2) can be computed from this model.
 The ICC(2) reflects the reliability in the *mean* estimate.
 Instead of representing the proportion of variance in scores due to the mean, the ICC(2) reflects the proportion of variance in mean estimates that is due to true mean variance.
-The denominator includes the expected error variance of the mean ($\sigma^2_{e,i}/n$), rather than merely the expected error variance of the scores.
+The denominator includes the expected error variance of the mean ($\sigma^2_{e,i}/n_i$), rather than merely the expected error variance of the scores.
+The $n_i$ indicates the number of observations for group $i$, and can be the total for that person, or the number up until the data row.
 
 The `fitted` function takes an `occasion` argument.
 This argument provides the $n_i$ in the mean error variance formula.
 Although $n_i$ could be constant within each subject, we can use the `Days` variable to plot how mean score reliability increases over time.
+That is, we can plot the ICC(2) for each person, incrementally as the data arrived by day.
 ```{r,results='asis'}
 sleepstudy$occasion <- sleepstudy$Days + 1
 kable(head(sleepstudy))
