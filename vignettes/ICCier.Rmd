@@ -2,7 +2,10 @@
 title: "ICCier"
 author: "Stephen R. Martin"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    readme: true
 bibliography: bib.bib
 vignette: >
   %\VignetteIndexEntry{ICCier}
@@ -34,6 +37,8 @@ Finally, we end with some best practices and tips for using the `ICCier` package
 
 # Background
 ## Intraclass Correlation Coefficients
+The intraclass correlation coefficient is a quantity ranging from 0 to 1 that indicates the proportion of variability in the data due to between-group variance.
+
 
 ## Group and observation-specific ICCs
 
@@ -69,3 +74,4 @@ Finally, we end with some best practices and tips for using the `ICCier` package
 
 ## Pre-Filtering (Self: as in, using complete cases only, so fitted can be combined easily)
 
+# References
