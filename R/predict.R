@@ -58,7 +58,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 
   out <- sapply(1:nrow(dat$stan_data$x_sca_l1),FUN = function(i){ # Each row
     sapply(1:draws, function(s){ # Each posterior sample
-      sds <- as.vector(exp(dat$stan_data$x_sca_l2[i,,drop=FALSE] %*% samps$eta[,,s]))
+      sds <- as.vector(exp(dat$stan_data$x_bet_l2[i,,drop=FALSE] %*% samps$eta[,,s]))
       sds.diag <- diag(sds,length(sds),length(sds))
 
       var.mu <- sds[1]^2
@@ -179,11 +179,11 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   rand_samps <- .get_random_effect_samples(object,draws)
   samps <- sapply(1:draws,function(x){cbind(rand_samps$mu_random[,,x],rand_samps$gamma_random[,,x])},simplify='array')
   omega <- array(t(as.matrix(object$fit,pars='Omega')[1:draws,]),dim=c(P_l1 + Q_l1, P_l1 + Q_l1,draws))
-  eta <- array(t(as.matrix(object$fit,pars='eta')[1:draws,]),dim=c(object$stan_data$P_l2, P_l1 + Q_l1, draws))
+  eta <- array(t(as.matrix(object$fit,pars='eta')[1:draws,]),dim=c(object$stan_data$R_l2, P_l1 + Q_l1, draws))
 
   L_omega <- array(apply(omega,3,function(x){t(chol(x))}),dim=dim(omega))
   sds <- sapply(1:draws,FUN = function(x){
-    (exp(object$stan_data$x_sca_l2 %*% eta[,,x]))
+    (exp(object$stan_data$x_bet_l2 %*% eta[,,x]))
   }, simplify='array')
 
   sapply(1:draws,FUN=function(x){
@@ -209,6 +209,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 #' @return List of arrays.
 .extract_transform <- function(object,draws){
   K <- object$stan_data$K
+  R_l2 <- object$stan_data$R_l2
   P_l2 <- object$stan_data$P_l2
   P_l1 <- object$stan_data$P_l1
   Q_l2 <- object$stan_data$Q_l2
@@ -221,7 +222,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
   Omega.cols <- grep('Omega.*',colnames(samps),value = TRUE)
 
   gamma <- array(t(samps[,gamma.cols]),dim=c(P_l2,P_l1,draws))
-  eta <- array(t(samps[,eta.cols]),dim=c(P_l2,P_l1 + Q_l1,draws))
+  eta <- array(t(samps[,eta.cols]),dim=c(R_l2,P_l1 + Q_l1,draws))
   Omega <- array(t(samps[,Omega.cols]),dim=c(P_l1 + Q_l1,P_l1 + Q_l1,draws))
   random_z <- .get_random_effect_z_samples(object,draws)
   return(mget(c('gamma','eta','random_z','Omega')))
