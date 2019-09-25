@@ -92,6 +92,61 @@ Consequently, `ICCier` can be used to probe sources of reliability.
 ## Group and observation-specific ICCs
 
 # The Underlying Model
+This section details the model as implemented in the \texttt{ICCier} package.
+Let $y_{ij}$ be the $j$th observation in the $i$th group response vector $\Vector{y}_i$.
+Because we are using an unconditional one-way model, the expected response for any $y_{ij}$ is $\mu_i = \beta_0 + u_{0i}$.
+The expected residual standard deviation for $y_{ij}$ is log-linearly modeled from a Level 1 design matrix ($\Vector{x_i}$) and coefficient vector ($\Vector{\gamma}_i$).
+All Level 1 scale coefficients are modeled using a multivariate linear model from a Level 2 design matrix ($\Vector{X}$), coefficient \emph{matrix} ($\Vector{\Gamma}$), and random effect row vectors ($\Vector{u}^{\sigma\intercal}_{i}$).
+Here, $\Vector{X}_i$ is the row vector containing group-level predictors for group $i$.
+All random effects ($u_{0i},\Vector{u}^\sigma_i$) are assumed to vary and covary.
+The standard deviations of the random effects are similarly modeled using a multivariate linear model from a Level 2 design matrix, and coefficient matrix $\Vector{\eta}$.
+Altogether, the model is defined as follows.
+\begin{align*}
+    \Vector{y}_{i} &\sim \mathcal{N}(\mu_{i}, \Vector{\hat\sigma}_{\epsilon,i}) \\
+    \mu_{i} &= \beta_0 + u_{0i} \tag{Location Model} \\
+    %\Vector{y}_{i} &= \beta_0 + u_{0i} + \Vector{e}_{i} \tag{Location Model}\\
+    \log\Vector{\hat\sigma}_{\epsilon,i} &= \Vector{x}_{i}\Vector{\gamma}_{i} \tag{Level 1 Scale Model}\\
+    %\Vector{e}_{i} &\sim \mathcal{N}(0,\Vector{\hat\sigma}_{\epsilon,i}) \\
+    %\log\Vector{\hat\sigma}_{\epsilon,i} &= \Vector{x}_{i}\Vector{\gamma}_{i} \tag{Level 1 Scale Model}\\
+    \Vector{\gamma}_{i}^\intercal &= \Vector{X}_{i}\Vector{\Gamma} + \Vector{u}^{\sigma\intercal}_i \tag{Level 2 Scale Model}\\
+    \begin{bmatrix}
+        u_{0i} \\
+        \Vector{u}^{\sigma}_i
+    \end{bmatrix} &\sim \mathcal{N}(\Vector{0},\Vector{\Sigma}_i = \Vector{\sigma}_i\Vector{\Omega}\Vector{\sigma}_i) \\
+    \diag(\log\Vector{\sigma}_i)^\intercal &= \Vector{X}_i\Vector{\eta} \tag{Between-group Scale Model} 
+%    \text{ICC(1)}_{ij} &= \frac{\exp(\Vector{X}_i\Vector{\eta}_{\bullet 1})^2}{\exp(\Vector{X}_i\Vector{\eta}_{\bullet 1})^2 + \exp(\Vector{x}_{ij}\Vector{\gamma}_i)^2}
+\end{align*}
+The expected unconditional ICC(1)$_{ij}$ is therefore
+\begin{align*}
+    \text{ICC(1)}_{ij} &= \frac{\sigma_{b,i}^2}{\sigma_{b,i}^2 + \hat\sigma^2_{\epsilon,ij}} \\
+    &= \frac{\exp(\Vector{X}_i\Vector{\eta}_{\bullet 1})^2}{\exp(\Vector{X}_i\Vector{\eta}_{\bullet 1})^2 + \exp(\Vector{x}_{ij}\Vector{\gamma}_i)^2},
+\end{align*}
+where $\Vector{\eta}_{\bullet 1}$ refers to the first column of $\Vector{\eta}$, which specifically contains the predictive coefficients for the group mean standard deviation (i.e., for $\sigma_{b,i}$).
+
+The model implemented by \texttt{ICCier} employs a maximal structure, such that every level 2 variable predicts each level 1 coefficient.
+This allows researchers to explore the impact of level 2 variables on the level 1 scale model.
+In practice, this does not affect the estimated ICCs.
+The ICC calculation only requires the predicted between-group and within-group variance.
+If one only had a level 1 scale model, with no level 2 predictors, then the random effect variances would be larger than with level 2 covariates.
+Consequently, the random effects would change, but the predicted within-person variance would be the same.
+Therefore, although the model is maximal, the dense $\Vector{\Gamma}$ matrix provides additional insight into varying ICCs without affecting the estimated ICCs themselves.
+\subsubsection{Priors}
+Broadly, there are four sets of parameters for which priors must be defined: Fixed location intercept ($\beta_0$), fixed scale coefficients ($\Vector{\Gamma}$), between-person scale coefficients ($\Vector{\eta}$), and the random effect correlations ($\Vector{\Omega}$).
+In practice, one should choose priors based on the a-priori known characteristics of the data, such that the priors imply reasonable expected values and variances for the given scenario \citep{Gelman2017_prior_likelihood}.
+Nevertheless, the following priors were specified to accommodate a wide range of possible data.
+\begin{align*}
+    \beta_0 &\sim \mathcal{N}(0,10) \\
+    \Gamma_{pq} &\sim \mathcal{ST}(\nu = 3, \mu = 0, \sigma = 5), \forall p,q \\
+    \eta_{pq} &\sim \mathcal{ST}(\nu = 3, \mu = 0, \sigma = 5), \forall p,q \\
+    \Vector{\Omega} &\sim LKJ(1)
+\end{align*}
+Note that $\Gamma_{pq}$ and $\eta_{pq}$ represent elements in the respective $\Vector{\Gamma}$ and $\Vector{\eta}$ coefficient matrices.
+Each element in these coefficient matrices is given a heavy-tailed Student T prior.
+%We recommend using a heavy-tailed prior for scale model parameters.
+The heavy-tailed prior accommodates variances approaching zero better than a normal distribution permits.
+In our testing of this model, between-group variances in particular may be small or effectively zero, and the wide-tailed priors effectively attenuated any sampling problems.
+The LKJ prior is a spherical prior over correlation matrices that takes a single parameter.
+We set the parameter to one, implying a uniform prior over correlation matrices [@lewandowski2009b].
 
 # Function Overview
 
