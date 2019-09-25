@@ -131,7 +131,7 @@ ICCier <- function(formula, data, ...){
   outcome.index <- location.index <- which(!(formType %in% c('between','within','group')))
   conditional <- length(all.vars(formula(formList[[location.index]],lhs=0))) > 0
 
-  formRHS <- sapply(formList,function(x){deparse(formula(x)[[3]])})
+  formRHS <- sapply(formList,function(x){Reduce(paste,deparse(formula(x)[[3]]))})
 
   # Piece together
   outcome <- formType[outcome.index]
