@@ -10,25 +10,30 @@ ICCier <- function(x,...){
 ICCier.default <- function(x, group, data, ...){
   x <- substitute(x)
   group <- substitute(group)
-  if(is.null(x) | is.character(x)){
+  # if(is.null(x) | is.character(x)){
+  if(!is.name(x)){
     stop('x must be specified, as an unquoted variable name.')
   }
-  if(is.null(group) | is.character(group)){
+  # if(is.null(group) | is.character(group)){
+  if(!is.name(group)){
     stop('Group must be specified, as an unquoted variable name.')
   }
   if(!is.data.frame(data)){
     stop('Data must be specified.')
   }
 
-  dots <- list(...)
-  which.form <- sapply(dots,function(x){is.formula(x)})
-  forms <- dots[which.form]
-  dots[which.form] <- NULL
-
   formList <- list(outcome=x,group=group)
-  formList <- c(formList,forms)
+
+  dots <- list(...)
+  which.form <- sapply(dots,is.formula)
+  if(any(which.form)){
+    forms <- dots[which.form]
+    dots[which.form] <- NULL
+    formList <- c(formList,forms)
+  }
 
   form <- .formulate(formList)
+  do.call(ICCier,c(list(formula=form,data=data),dots))
 
 }
 
@@ -149,30 +154,64 @@ ICCier.formula <- function(formula, data, ...){
 #' @keywords internal
 #'
 .formulate <- function(formList){
-  if(length(formList) != 4){
-    stop('Formula list must have four components. See ?ICCier')
+  if(length(formList) < 2){
+    stop('Formula list must have at least outcome (x) and group specified.')
   }
 
-  formList <- lapply(formList,function(x){Formula::Formula(x)})
+  forms <- list(outcome = formList[['outcome']],group = formList[['group']], between = between ~ 1, within = within ~ 1|1, mean = mean ~ 1|1)
 
-  formType <- sapply(formList,function(x){all.vars(formula(x,lhs=1,rhs=0))})
-  outcome.index <- location.index <- which(!(formType %in% c('between','within','group')))
-  conditional <- length(all.vars(formula(formList[[location.index]],lhs=0))) > 0
+  which.forms <- sapply(formList,is.formula)
+  if(any(which.forms)){
+    formList[which.forms] <- sapply(formList[which.forms],Formula::Formula)
+    formType <- sapply(formList[which.forms],function(x){all.vars(formula(x,lhs=1,rhs=0))})
+    if(any(!(formType %in% c('between','within','mean')))){
+      stop('Only between, within, and mean formulas can be specified.')
+    }
+    forms[formType] <- formList[which.forms]
+  }
 
-  formRHS <- sapply(formList,function(x){Reduce(paste,deparse(formula(x)[[3]]))})
+  conditional <- length(all.vars(formula(forms[['mean']],lhs=0))) > 0
 
   # Piece together
-  outcome <- formType[outcome.index]
-  group <- formRHS[formType == 'group']
-  within <- formRHS[formType == 'within']
-  between <- formRHS[formType == 'between']
-  location <- formRHS[location.index]
-  fc <- paste(outcome,' | ',group,' ~ ',within, ' | ',between)
+  outcome <- deparse(forms[['outcome']])
+  group <- deparse(forms[['group']])
+  within <- Reduce(paste,deparse(forms[['within']][[3]]))
+  between <- Reduce(paste,deparse(forms[['between']][[3]]))
+  mean <- Reduce(paste,deparse(forms[['mean']][[3]]))
+
+
+
+  fc <- paste(outcome,'|',group,'~',within,'|',between)
   if(conditional){
-    fc <- paste(fc,'|',formRHS[location.index])
+    fc <- paste(fc,'|',mean)
   }
-  form <- formula(fc)
+  form <- Formula::as.Formula(fc)
   return(form)
+
+  # if(length(formList) != 4){
+  #   stop('Formula list must have four components. See ?ICCier')
+  # }
+  #
+  # formList <- lapply(formList,function(x){Formula::Formula(x)})
+  #
+  # formType <- sapply(formList,function(x){all.vars(formula(x,lhs=1,rhs=0))})
+  # outcome.index <- location.index <- which(!(formType %in% c('between','within','group')))
+  # conditional <- length(all.vars(formula(formList[[location.index]],lhs=0))) > 0
+  #
+  # formRHS <- sapply(formList,function(x){Reduce(paste,deparse(formula(x)[[3]]))})
+  #
+  # # Piece together
+  # outcome <- formType[outcome.index]
+  # group <- formRHS[formType == 'group']
+  # within <- formRHS[formType == 'within']
+  # between <- formRHS[formType == 'between']
+  # location <- formRHS[location.index]
+  # fc <- paste(outcome,' | ',group,' ~ ',within, ' | ',between)
+  # if(conditional){
+  #   fc <- paste(fc,'|',formRHS[location.index])
+  # }
+  # form <- formula(fc)
+  # return(form)
 
 }
 
