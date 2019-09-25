@@ -248,9 +248,9 @@ print.summary.ICCier <- function(object,...){
   eta.L <- matrix(eta.ci[,1],nrow=P_l2)
   eta.U <- matrix(eta.ci[,2],nrow=P_l2)
 
-  rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$l2
+  rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$bet
   colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c(fnames$l1.loc,fnames$l1)
-  names(dimnames(eta)) <- names(dimnames(eta.L)) <- names(dimnames(eta.U)) <- c('Level 2','')
+  names(dimnames(eta)) <- names(dimnames(eta.L)) <- names(dimnames(eta.U)) <- c('Bet. Group','')
 
   out <- mget(c('eta','eta.L','eta.U'))
 
@@ -307,14 +307,14 @@ print.summary.ICCier <- function(object,...){
   l1 <- colnames(object$stan_data$x_sca_l1)
   l2 <- colnames(object$stan_data$x_sca_l2)
   l1.loc <- colnames(object$stan_data$x_loc_l1)
-  l2.loc <- colnames(object$stan_data$x_loc_l2)
+  bet  <- colnames(object$stan_data$x_bet_l2)
   outcome <- colnames(model.part(object$formula,object$data,lhs=1))
   grouping <- colnames(model.part(object$formula,object$data,lhs=2))
   if(prefix){
     l1.loc <- paste0('Mean_',l1.loc)
     l2.loc <- paste0('Mean_',l2.loc)
   }
-  return(mget(c('l1','l2','outcome','grouping','l1.loc','l2.loc')))
+  return(mget(c('l1','l2','outcome','grouping','l1.loc','l2.loc','bet')))
 }
 
 .print_diagnostics <- function(diagnostics){
