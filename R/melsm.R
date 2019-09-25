@@ -1,3 +1,36 @@
+ICCier <- function(x,...){
+  if(missing(x) | class(substitute(x)) == 'call'){
+    x <- formula()
+  } else {
+    x <- substitute(x)
+  }
+  UseMethod('ICCier',x)
+}
+
+ICCier.default <- function(x, group, data, ...){
+  x <- substitute(x)
+  group <- substitute(group)
+  if(is.null(x) | is.character(x)){
+    stop('x must be specified, as an unquoted variable name.')
+  }
+  if(is.null(group) | is.character(group)){
+    stop('Group must be specified, as an unquoted variable name.')
+  }
+  if(!is.data.frame(data)){
+    stop('Data must be specified.')
+  }
+
+  dots <- list(...)
+  which.form <- sapply(dots,function(x){is.formula(x)})
+  forms <- dots[which.form]
+  dots[which.form] <- NULL
+
+  formList <- list(outcome=x,group=group)
+  formList <- c(formList,forms)
+
+  form <- .formulate(formList)
+
+}
 
 #' Run MELSM model.
 #'
@@ -47,7 +80,7 @@
 #' @importFrom parallel detectCores
 #' @export
 #'
-ICCier <- function(formula, data, ...){
+ICCier.formula <- function(formula, data, ...){
   # Sane defaults
   dots <- list(...)
   if(is.null(dots$control)){
@@ -67,11 +100,6 @@ ICCier <- function(formula, data, ...){
   }
   if(is.null(dots$chains)){
     dots$chains <- 4
-  }
-
-  # New interface: formula can be a list. See ?.formulate
-  if(is.list(formula)){
-    formula <- .formulate(formula)
   }
 
   d <- .parse_formula(formula, data)
@@ -113,7 +141,7 @@ ICCier <- function(formula, data, ...){
 #' Parses formula list into standard Formula
 #'
 #' Takes list of formulas, converts into the standard formula.
-#' E.g., \code{list(between ~ age, within ~ day|1, group ~ subjectID, y ~ 1|1)}
+#' E.g., \code{list(outcome = y, group = subjectID, between ~ age, within ~ day|1, mean ~ 1|1)}
 #'
 #' @param formList List containing between, within, location, and group formulas.
 #'
@@ -249,4 +277,14 @@ ICCier <- function(formula, data, ...){
 
   return(mget(c('rhats','n_effs','div','tree.max','bfmi')))
 
+}
+
+#' Tests if object is formula
+#'
+#' @param x Object to test
+#'
+#' @return Logical. TRUE if formula
+#' @keywords internal
+is.formula <- function(x){
+  inherits(x,'formula')
 }
