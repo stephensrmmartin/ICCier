@@ -143,7 +143,7 @@ ICCier <- function(formula, data, ...){
   if(conditional){
     fc <- paste(fc,'|',formRHS[location.index])
   }
-  form <- as.formula(fc)
+  form <- formula(fc)
   return(form)
 
 }
@@ -164,15 +164,16 @@ ICCier <- function(formula, data, ...){
 
   f <- Formula::Formula(formula)
   length.f <- length(f)
-  conditional <- length.f[2] > 2
+  conditional <- length.f[2] > 3
 
   if(length.f[1] != 2){
-    stop('Both the outcome and person-level indicator variables must be specified.')
+    stop('Both the outcome and grouping variables must be specified.')
   }
-  if(length.f[2] < 2){
-    stop('Both the level 1 and level 2 formulas must be specified.')
+  if(length.f[2] < 3){
+    # stop('Both the level 1 and level 2 formulas must be specified.')
+    stop('The level1 and level2 within-group variance model, and the between-group variance model must be specified.')
   }
-  if(length.f[2] < 4 & conditional){
+  if(length.f[2] < 5 & conditional){
     stop('If specifying a location model, both level 1 and level 2 formulas must be specified.')
   }
   fnames <- attr(terms(f),'term.labels')
@@ -201,7 +202,7 @@ ICCier <- function(formula, data, ...){
   P_l1 <- ncol(x_sca_l1)
 
   if(conditional){
-    f.location <- Formula(formula(f,rhs=c(3,4),lhs=0))
+    f.location <- Formula(formula(f,rhs=c(4,5),lhs=0))
   } else{
     f.location <- Formula(~1|1)
   }
