@@ -288,18 +288,18 @@ ICCier.formula <- function(formula, data, ...){
 
     x_sca_l2 <- model.matrix(f,x_l2,rhs=2)
     x_loc_l2 <- model.matrix(f.location,x_l2,rhs=2)
-    x_bp_l2 <- model.matrix(f,x_l2,rhs=3)
+    x_bet_l2 <- model.matrix(f,x_l2,rhs=3)
   }
   P_l2 <- ncol(x_sca_l2)
   Q_l2 <- ncol(x_loc_l2)
-  R_l2 <- ncol(x_bp_l2)
+  R_l2 <- ncol(x_bet_l2)
 
   if(predict){
     y <- NA
   } else {
     y <- mf[,fnames[1]]
   }
-  stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y','Q_l1','Q_l2','x_loc_l1','x_loc_l2','R_l2','x_bp_l2'))
+  stan_data <- mget(c('N','K','P_l1','P_l2','x_sca_l1','x_sca_l2','y','Q_l1','Q_l2','x_loc_l1','x_loc_l2','R_l2','x_bet_l2'))
   stan_data$group <- group$group_L1$group_numeric
   mf[,fnames[2]] <- group$group_L1[,fnames[2]]
   return(list(stan_data=stan_data,group_map = group, model.frame = mf,conditional=conditional))
