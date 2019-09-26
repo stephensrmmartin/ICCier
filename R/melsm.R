@@ -1,3 +1,64 @@
+#' Fit ICCier model.
+#'
+#' Runs the ICCier model and returns an ICCier object.
+#'
+#' \code{ICCier} uses the mixed effects location scale model (MELSM) to estimate an unconditional
+#' (intercept-only) or conditional location model with random effect of person.
+#' The within-person variances (i.e., residual, or error variances) are log-linearly modelled from a set of observation-level and
+#' person-level predictors, with coefficients \eqn{\gamma}.
+#' The between-person variances are also log-linearly modelled from a set of person-level predictors,
+#' with coefficients \eqn{\eta}.
+#'
+#' @section Model specification:
+#' The \code{ICCier} model imposes a model on the between-group SDs, within-group SDs, and the mean if a conditional ICC is desired.
+#' These models can be specified in two ways.
+#' One way is through a multiple-formula syntax, and another through a single-formula syntax.
+#' These are described in turn.
+#'
+#' The multiple-formula syntax at minimum requires \code{x} (outcome) and \code{group} (the grouping variable).
+#' If only these two are included, then the between and within-group variances are modeled with only intercepts.
+#' Random effects are included for the within-group variances.
+#' The between-group SD model is specified using \code{between ~ predictors}, where `predictors` must be group-level variables.
+#' The within-group SD model is specified using \code{within ~ Level_1_predictors | Level_2_predictors}.
+#' If conditional ICCs are desired, then the mean model can be specified using \code{mean ~ Level_1_predictors | Level_2_predictors}.
+#' Any of these can be excluded or included.
+#' If they are excluded, they default to intercept-only models.
+#'
+#' The single formula syntax can take two forms.
+#' For an unconditional model:
+#' \code{outcome | group ~ WP_Level_1_formula | WP_Level_2_formula | BP_Level_2_formula}
+#'
+#' For a conditional model:
+#' \code{outcome | group ~ WP_Level_1_formula | WP_Level_2_formula | BP_Level_2_formula | Mean_Level_1 | Mean_Level_2}
+#'
+#' The model is implemented in a 'maximal' manner, meaning \emph{all} level 1 effects are assumed to randomly vary and correlate.
+#' Moreover, \emph{all} level 2 variables predict each level 1 parameter.
+#' This means you \emph{should not include cross-level interaction terms}, because they are implicit in the model formulation.
+#' Level 1 or Level 2 interaction terms may be included.
+#'
+#' When using a \emph{conditional} model, the default ICCs are "unadjusted".
+#' In our case, the "unadjusted" ICC is still the random intercept variance divided by
+#' the random intercept variance and error variance.
+#' This makes sense, if the location model(s) are meant to be controlling variables.
+#' If you wish to have the so-called \emph{adjusted} ICC, use \code{adjusted = TRUE}.
+#' The \emph{adjusted} ICC instead uses the expected variance due to \emph{all random factors},
+#' divided by itself and the error variance.
+#' The adjusted ICC is therefore the proportion of random variance due to the random factors.
+#' This makes sense if the goal is to examine individual differences, and therefore examine the
+#' random effects themselves.
+#'
+#' @param x The outcome variable. Raw variable name (not a string).
+#' @param group The grouping variable. Raw variable name (not a string).
+#' @param formula Formula representing the model. See details.
+#' @param data Data frame containing all variables.
+#' @param ... Multiple formulas for ICCier model (See Details). Arguments passed to \code{\link[rstan]{sampling}}.
+#' By default, \code{sampling} is called with \code{chains=4,iter=2000,adapt_delta=.95,init=0}.
+#' If \code{options('mc.cores')} is defined, then \code{cores=getOption("mc.cores")}; otherwise all detected cores are used.
+#'
+#' @return ICCier object. List containing the model formula, data, stan_data, model fit, and mapping between original ID and numeric ID.
+#' @importFrom parallel detectCores
+#' @export
+#'
 ICCier <- function(x,...){
   if(missing(x) | class(substitute(x)) == 'call'){
     x <- formula()
@@ -7,6 +68,10 @@ ICCier <- function(x,...){
   UseMethod('ICCier',x)
 }
 
+#' Default ICCier Method
+#'
+#' @export
+#' @describeIn ICCier Multiple formula method.
 ICCier.default <- function(x, group, data, ...){
   x <- substitute(x)
   group <- substitute(group)
@@ -37,54 +102,10 @@ ICCier.default <- function(x, group, data, ...){
 
 }
 
-#' Run MELSM model.
+#' Formula ICCier Method.
 #'
-#' Runs the MELSM model and returns an ICCier object.
-#'
-#' \code{ICCier} uses the mixed effects location scale model to estimate an unconditional
-#' (intercept-only) or conditional location model with random effect of person.
-#' The within-person variances (i.e., residual, or error variances) are log-linearly modelled from a set of observation-level and
-#' person-level predictors, with coefficients \eqn{\gamma}.
-#' The between-person variances are also log-linearly modelled from a set of person-level predictors,
-#' with coefficients \eqn{\eta}.
-#'
-#' The formula syntax is as follows:
-#'
-#' For an unconditional model:
-#' \code{outcome | personID ~ Level_1_formula | Level_2_formula}
-#'
-#' For a conditional model:
-#' \code{outcome | personID ~ Level_1_formula | Level_2_formula | Level_1_conditional | Level_2_conditional}
-#'
-#' The model is implemented in a 'maximal' manner, meaning \emph{all} level 1 effects are assumed to randomly vary and correlate.
-#' Moreover, \emph{all} level 2 variables predict each level 1 parameter.
-#' This means you \emph{should not include cross-level interaction terms}, because they are implicit in the model formulation.
-#' Level 1 or Level 2 interaction terms may be included.
-#'
-#' For now, the Level 2 formula predicts both the level 1 scale parameters, as well as the level 2 random effect variances.
-#' If you wish to only have person-specific ICCs, use \code{1} as the level 1 formula (intercept-only).
-#'
-#' When using a \emph{conditional} model, the default ICCs are "unadjusted".
-#' In our case, the "unadjusted" ICC is still the random intercept variance divided by
-#' the random intercept variance and error variance.
-#' This makes sense, if the location model(s) are meant to be controlling variables.
-#' If you wish to have the so-called \emph{adjusted} ICC, use \code{adjusted = TRUE}.
-#' The \emph{adjusted} ICC instead uses the expected variance due to \emph{all random factors},
-#' divided by itself and the error variance.
-#' The adjusted ICC is therefore the proportion of random variance due to the random factors.
-#' This makes sense if the goal is to examine individual differences, and therefore examine the
-#' random effects themselves.
-#'
-#' @param formula Formula representing the model. See details.
-#' @param data Data frame containing all variables.
-#' @param ... Arguments passed to \code{\link[rstan]{sampling}}.
-#' By default, \code{sampling} is called with \code{chains=4,iter=2000,adapt_delta=.95,init=0}.
-#' If \code{options('mc.cores')} is defined, then \code{cores=getOption("mc.cores")}; otherwise all detected cores are used.
-#'
-#' @return ICCier object. List containing the model formula, data, stan_data, model fit, and mapping between original ID and numeric ID.
-#' @importFrom parallel detectCores
 #' @export
-#'
+#' @describeIn ICCier Single formula method.
 ICCier.formula <- function(formula, data, ...){
   # Sane defaults
   dots <- list(...)
@@ -158,11 +179,11 @@ ICCier.formula <- function(formula, data, ...){
     stop('Formula list must have at least outcome (x) and group specified.')
   }
 
-  forms <- list(outcome = formList[['outcome']],group = formList[['group']], between = between ~ 1, within = within ~ 1|1, mean = mean ~ 1|1)
+  forms <- list(outcome = formList[['outcome']],group = formList[['group']], between = Formula(between ~ 1), within = Formula(within ~ 1|1), mean = Formula(mean ~ 1|1))
 
   which.forms <- sapply(formList,is.formula)
   if(any(which.forms)){
-    formList[which.forms] <- sapply(formList[which.forms],Formula::Formula)
+    formList[which.forms] <- sapply(formList[which.forms],Formula::as.Formula)
     formType <- sapply(formList[which.forms],function(x){all.vars(formula(x,lhs=1,rhs=0))})
     if(any(!(formType %in% c('between','within','mean')))){
       stop('Only between, within, and mean formulas can be specified.')
@@ -280,6 +301,7 @@ ICCier.formula <- function(formula, data, ...){
     # Leave matrix as-is for prediction.
     x_sca_l2 <- model.matrix(f,mf,rhs=2)
     x_loc_l2 <- model.matrix(f.location,mf,rhs=2)
+    x_bet_l2 <- model.matrix(f,mf,rhs=3)
     group$group_L2 <- group$group_L1
   } else {
     x_l2.mf <- model.frame(f,mf,lhs=2)
