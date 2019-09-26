@@ -207,33 +207,8 @@ ICCier.formula <- function(formula, data, ...){
     fc <- paste(fc,'|',mean)
   }
   form <- Formula::as.Formula(fc)
+
   return(form)
-
-  # if(length(formList) != 4){
-  #   stop('Formula list must have four components. See ?ICCier')
-  # }
-  #
-  # formList <- lapply(formList,function(x){Formula::Formula(x)})
-  #
-  # formType <- sapply(formList,function(x){all.vars(formula(x,lhs=1,rhs=0))})
-  # outcome.index <- location.index <- which(!(formType %in% c('between','within','group')))
-  # conditional <- length(all.vars(formula(formList[[location.index]],lhs=0))) > 0
-  #
-  # formRHS <- sapply(formList,function(x){Reduce(paste,deparse(formula(x)[[3]]))})
-  #
-  # # Piece together
-  # outcome <- formType[outcome.index]
-  # group <- formRHS[formType == 'group']
-  # within <- formRHS[formType == 'within']
-  # between <- formRHS[formType == 'between']
-  # location <- formRHS[location.index]
-  # fc <- paste(outcome,' | ',group,' ~ ',within, ' | ',between)
-  # if(conditional){
-  #   fc <- paste(fc,'|',formRHS[location.index])
-  # }
-  # form <- formula(fc)
-  # return(form)
-
 }
 
 #' Parses formula using Formula.

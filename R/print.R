@@ -127,9 +127,6 @@ print.summary.ICCier <- function(object,...){
   .print_diagnostics(object$meta$diagnostics)
   cat('\n--------------------\n')
 
-  # beta.sum <- cbind(format(round(object$estimate$beta,digits),...),paste0('[',format(round(object$ci$L$beta,digits),...),' ',format(round(object$ci$U$beta,digits),...),']'))
-  # colnames(beta.sum) <- c('',paste0(object$prob*100,'%'))
-  # rownames(beta.sum) <- ''
   beta.sum <- cbind(format(round(object$estimate$beta,digits),...),
                     matrix(paste0('[',format(round(object$ci$L$beta,digits),...),
                                   ' ',
