@@ -33,6 +33,7 @@ summary.ICCier <- function(object,prob=.95,...){
   icc_sd <- .get_icc_sd(object,prob,...)
   prob <- prob
   formula <- object$formula
+  type <- .get_model_type(object)
 
   chains <- object$fit@sim$chains
   iter <- list(iter=object$fit@sim$iter)
@@ -40,7 +41,7 @@ summary.ICCier <- function(object,prob=.95,...){
   iter$total <- iter$post*chains
   K <- object$stan_data$K
   N <- object$stan_data$N
-  meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K,digits=digits,type=object$type)
+  meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K,digits=digits,type=type)
 
   estimate <- list(beta = t(beta$mu),
                 gamma = t(gamma$gamma),
@@ -90,7 +91,7 @@ summary.ICCier <- function(object,prob=.95,...){
 #' @keywords internal
 print.ICCier <- function(object,...){
   cat('Formula:',deparse(object$formula),'\n')
-  cat('Type: ',ifelse(object$type$conditional,paste0('Conditional (',ifelse(object$type$adjusted,'Adjusted','Unadjusted'),')'),'Unconditional'),'\n')
+  cat('Type: ',.get_model_type(object),'\n')
   cat('\n')
 
 
@@ -120,39 +121,16 @@ print.summary.ICCier <- function(object,...){
   }
 
   cat('Formula:',deparse(object$formula),'\n')
-  cat('Type: ',ifelse(object$meta$type$conditional,paste0('Conditional (',ifelse(object$meta$type$adjusted,'Adjusted','Unadjusted'),')'),'Unconditional'),'\n')
+  cat('Type: ',object$meta$type,'\n')
   cat('Number of observations:', object$meta$N,'\n')
   cat('Number of groups:',object$meta$K,'\n')
   cat('\n--------------------\n')
   .print_diagnostics(object$meta$diagnostics)
   cat('\n--------------------\n')
 
-  beta.sum <- cbind(format(round(object$estimate$beta,digits),...),
-                    matrix(paste0('[',format(round(object$ci$L$beta,digits),...),
-                                  ' ',
-                                  format(round(object$ci$U$beta,digits),...),
-                                  ']'),
-                           nrow=nrow(object$estimate$beta)))
-  colnames(beta.sum)[colnames(beta.sum) == ''] <- paste0(object$prob*100,'%')
-  names(dimnames(beta.sum)) <- names(dimnames(object$estimate$beta))
-
-  gamma.sum <- cbind(format(round(object$estimate$gamma,digits),...),
-                     matrix(paste0('[',format(round(object$ci$L$gamma,digits),...),
-                                   ' ',
-                                   format(round(object$ci$U$gamma,digits),...),
-                                   ']'),
-                            nrow=nrow(object$estimate$gamma)))
-  colnames(gamma.sum)[colnames(gamma.sum) == ''] <- paste0(object$prob*100,'%')
-  names(dimnames(gamma.sum)) <- names(dimnames(object$estimate$gamma))
-
-  eta.sum <- cbind(format(round(object$estimate$eta,digits),...),
-                   matrix(paste0('[',format(round(object$ci$L$eta,digits),...),
-                                 ' ',
-                                 format(round(object$ci$U$eta,digits),...),
-                                 ']'),
-                          nrow=nrow(object$estimate$eta)))
-  colnames(eta.sum)[colnames(eta.sum) == ''] <- paste0(object$prob*100,'%')
-  names(dimnames(eta.sum)) <- names(dimnames(object$estimate$eta))
+  beta.sum <- .print_matrix(object,digits,'beta',...)
+  gamma.sum <- .print_matrix(object,digits,'gamma')
+  eta.sum <- .print_matrix(object,digits,'eta')
 
   icc.sum <- cbind(format(round(c(object$estimate$icc_mean,object$estimate$icc_sd),digits)),
                    paste0('[',format(round(c(object$ci$L$icc_mean,object$ci$L$icc_sd),digits)),' ',
@@ -170,6 +148,34 @@ print.summary.ICCier <- function(object,...){
   cat('Random Effect Correlations: \n'); print(round(object$estimate$omega,digits),...); cat('\n')
 
   invisible(object)
+}
+
+.print_matrix <- function(object, digits, param,...){
+  # Extract
+  est <- object$estimate[[param]]
+  ci.L <- object$ci$L[[param]]
+  ci.U <- object$ci$U[[param]]
+
+  # Format
+  est <-  format(round(est,digits),...)
+  ci.L <- format(round(ci.L,digits),...)
+  ci.U <- format(round(ci.U,digits),...)
+
+  # Add brackets
+  ci <- paste0('[',ci.L,' ',ci.U,']')
+  ci <- matrix(ci,nrow=nrow(est))
+
+  # Combine
+  out <- cbind(est, ci)
+  colnames(out)[colnames(out) == ''] <- paste0(object$prob*100,'%')
+  names(dimnames(out)) <- names(dimnames(est))
+  return(out)
+}
+
+.get_model_type <- function(object){
+  type <- object$type
+  typeString <- ifelse(type$conditional,paste0('Conditional (',ifelse(type$adjusted,'Adjusted','Unadjusted'),')'),'Unconditional')
+  return(typeString)
 }
 
 .get_beta <- function(object,prob=.95,...){
