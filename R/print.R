@@ -120,6 +120,7 @@ print.summary.ICCier <- function(object,...){
     digits <- object$meta$digits
   }
 
+  # Header
   cat('Formula:',deparse(object$formula),'\n')
   cat('Type: ',object$meta$type,'\n')
   cat('Number of observations:', object$meta$N,'\n')
@@ -128,12 +129,13 @@ print.summary.ICCier <- function(object,...){
   .print_diagnostics(object$meta$diagnostics)
   cat('\n--------------------\n')
 
+  # Formatting
   beta.sum <- .print_matrix(object,digits,'beta',...)
   gamma.sum <- .print_matrix(object,digits,'gamma',...)
   eta.sum <- .print_matrix(object,digits,'eta',...)
   icc.sum <- .print_matrix(object,digits,'icc',...)
 
-
+  # Print
   cat('ICC Summary:','\n'); print(icc.sum,quote=FALSE)
   cat('\n--------------------\n')
   cat('Coefficients:','\n\n')
