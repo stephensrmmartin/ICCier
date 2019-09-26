@@ -2,48 +2,77 @@
 % Please edit documentation in R/melsm.R
 \name{ICCier}
 \alias{ICCier}
-\title{Run MELSM model.}
+\alias{ICCier.default}
+\alias{ICCier.formula}
+\title{Fit ICCier model.}
 \usage{
-ICCier(formula, data, ...)
+ICCier(x, ...)
+
+\method{ICCier}{default}(x, group, data, ...)
+
+\method{ICCier}{formula}(formula, data, ...)
 }
 \arguments{
-\item{formula}{Formula representing the model. See details.}
+\item{x}{The outcome variable. Raw variable name (not a string).}
+
+\item{...}{Multiple formulas for ICCier model (See Details). Arguments passed to \code{\link[rstan]{sampling}}.
+By default, \code{sampling} is called with \code{chains=4,iter=2000,adapt_delta=.95,init=0}.
+If \code{options('mc.cores')} is defined, then \code{cores=getOption("mc.cores")}; otherwise all detected cores are used.}
+
+\item{group}{The grouping variable. Raw variable name (not a string).}
 
 \item{data}{Data frame containing all variables.}
 
-\item{...}{Arguments passed to \code{\link[rstan]{sampling}}.
-By default, \code{sampling} is called with \code{chains=4,iter=2000,adapt_delta=.95,init=0}.
-If \code{options('mc.cores')} is defined, then \code{cores=getOption("mc.cores")}; otherwise all detected cores are used.}
+\item{formula}{Formula representing the model. See details.}
 }
 \value{
 ICCier object. List containing the model formula, data, stan_data, model fit, and mapping between original ID and numeric ID.
 }
 \description{
-Runs the MELSM model and returns an ICCier object.
+Runs the ICCier model and returns an ICCier object.
 }
 \details{
-\code{ICCier} uses the mixed effects location scale model to estimate an unconditional
+\code{ICCier} uses the mixed effects location scale model (MELSM) to estimate an unconditional
 (intercept-only) or conditional location model with random effect of person.
 The within-person variances (i.e., residual, or error variances) are log-linearly modelled from a set of observation-level and
 person-level predictors, with coefficients \eqn{\gamma}.
 The between-person variances are also log-linearly modelled from a set of person-level predictors,
 with coefficients \eqn{\eta}.
+}
+\section{Methods (by class)}{
+\itemize{
+\item \code{default}: Multiple formula method.
 
-The formula syntax is as follows:
+\item \code{formula}: Single formula method.
+}}
 
+\section{Model specification}{
+
+The \code{ICCier} model imposes a model on the between-group SDs, within-group SDs, and the mean if a conditional ICC is desired.
+These models can be specified in two ways.
+One way is through a multiple-formula syntax, and another through a single-formula syntax.
+These are described in turn.
+
+The multiple-formula syntax at minimum requires \code{x} (outcome) and \code{group} (the grouping variable).
+If only these two are included, then the between and within-group variances are modeled with only intercepts.
+Random effects are included for the within-group variances.
+The between-group SD model is specified using \code{between ~ predictors}, where `predictors` must be group-level variables.
+The within-group SD model is specified using \code{within ~ Level_1_predictors | Level_2_predictors}.
+If conditional ICCs are desired, then the mean model can be specified using \code{mean ~ Level_1_predictors | Level_2_predictors}.
+Any of these can be excluded or included.
+If they are excluded, they default to intercept-only models.
+
+The single formula syntax can take two forms.
 For an unconditional model:
-\code{outcome | personID ~ Level_1_formula | Level_2_formula}
+\code{outcome | group ~ WP_Level_1_formula | WP_Level_2_formula | BP_Level_2_formula}
 
 For a conditional model:
-\code{outcome | personID ~ Level_1_formula | Level_2_formula | Level_1_conditional | Level_2_conditional}
+\code{outcome | group ~ WP_Level_1_formula | WP_Level_2_formula | BP_Level_2_formula | Mean_Level_1 | Mean_Level_2}
 
 The model is implemented in a 'maximal' manner, meaning \emph{all} level 1 effects are assumed to randomly vary and correlate.
 Moreover, \emph{all} level 2 variables predict each level 1 parameter.
 This means you \emph{should not include cross-level interaction terms}, because they are implicit in the model formulation.
 Level 1 or Level 2 interaction terms may be included.
-
-For now, the Level 2 formula predicts both the level 1 scale parameters, as well as the level 2 random effect variances.
-If you wish to only have person-specific ICCs, use \code{1} as the level 1 formula (intercept-only).
 
 When using a \emph{conditional} model, the default ICCs are "unadjusted".
 In our case, the "unadjusted" ICC is still the random intercept variance divided by
@@ -56,3 +85,4 @@ The adjusted ICC is therefore the proportion of random variance due to the rando
 This makes sense if the goal is to examine individual differences, and therefore examine the
 random effects themselves.
 }
+
