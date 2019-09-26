@@ -129,14 +129,9 @@ print.summary.ICCier <- function(object,...){
   cat('\n--------------------\n')
 
   beta.sum <- .print_matrix(object,digits,'beta',...)
-  gamma.sum <- .print_matrix(object,digits,'gamma')
-  eta.sum <- .print_matrix(object,digits,'eta')
-
-  icc.sum <- cbind(format(round(c(object$estimate$icc_mean,object$estimate$icc_sd),digits)),
-                   paste0('[',format(round(c(object$ci$L$icc_mean,object$ci$L$icc_sd),digits)),' ',
-                          format(round(c(object$ci$U$icc_mean,object$ci$U$icc_sd),digits)),']'))
-  colnames(icc.sum) <- c('',paste0(object$prob*100,'%'))
-  rownames(icc.sum) <- c('Mean','SD')
+  gamma.sum <- .print_matrix(object,digits,'gamma',...)
+  eta.sum <- .print_matrix(object,digits,'eta',...)
+  icc.sum <- .print_matrix(object,digits,'icc',...)
 
 
   cat('ICC Summary:','\n'); print(icc.sum,quote=FALSE)
@@ -152,9 +147,15 @@ print.summary.ICCier <- function(object,...){
 
 .print_matrix <- function(object, digits, param,...){
   # Extract
-  est <- object$estimate[[param]]
-  ci.L <- object$ci$L[[param]]
-  ci.U <- object$ci$U[[param]]
+  if(param == 'icc'){
+    est <-  matrix(unlist(object$estimate[c('icc_mean','icc_sd')],use.names = FALSE),ncol=1)
+    ci.L <- matrix(unlist(object$ci$L[c('icc_mean','icc_sd')],use.names = FALSE),ncol=1)
+    ci.U <- matrix(unlist(object$ci$U[c('icc_mean','icc_sd')],use.names = FALSE),ncol=1)
+  } else {
+    est <- object$estimate[[param]]
+    ci.L <- object$ci$L[[param]]
+    ci.U <- object$ci$U[[param]]
+  }
 
   # Format
   est <-  format(round(est,digits),...)
@@ -165,9 +166,14 @@ print.summary.ICCier <- function(object,...){
   ci <- paste0('[',ci.L,' ',ci.U,']')
   ci <- matrix(ci,nrow=nrow(est))
 
-  # Combine
+  # Combine and rename
   out <- cbind(est, ci)
-  colnames(out)[colnames(out) == ''] <- paste0(object$prob*100,'%')
+  if(param == 'icc'){
+    colnames(out) <- c('',paste0(object$prob*100,'%'))
+    rownames(out) <- c('Mean','SD')
+  } else{
+    colnames(out)[colnames(out) == ''] <- paste0(object$prob*100,'%')
+  }
   names(dimnames(out)) <- names(dimnames(est))
   return(out)
 }
