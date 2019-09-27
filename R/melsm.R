@@ -2,6 +2,34 @@
 #'
 #' Runs the ICCier model and returns an ICCier object.
 #'
+#' The ICC is computed from a between-group variance and a within-group variance.
+#' Unlike the traditional ICC, \code{ICCier} allows the within-group variance to vary across groups.
+#' Moreover, \code{ICCier} can model both the between-group variance and within-group variance.
+#' This effectively provides insight into predictors of reliability.
+#'
+#' \code{ICCier} uses the mixed effects location scale model (MELSM) to model the variance components required for the ICC.
+#' The model specification is detailed in the \code{Model Specification} section below.
+#' By default, unconditional ICC(1) values are estimated.
+#' To obtain ICC(2) values, use the \code{fitted} function with the "occasion" argument specified.
+#'
+#' Conditional ICCs are estimated if a mean model is specified.
+#' By default, the conditional ICC is "unadjusted".
+#' To obtain "adjusted" ICCs, specify \code{adjusted=TRUE}.
+#' See the vignette for more information.
+#' In our case, the "unadjusted" ICC is still the random intercept variance divided by
+#' the random intercept variance and error variance.
+#' This makes sense, if the location model(s) are meant to be controlling variables.
+#' The \emph{adjusted} ICC instead uses the expected variance due to \emph{all random factors},
+#' divided by itself and the error variance.
+#' The adjusted ICC is therefore the proportion of random variance due to the random factors.
+#' This makes sense if the goal is to examine individual differences, and therefore examine the
+#' random effects themselves.
+#'
+#' Note that \code{ICCier} estimates a \emph{maximal} model, meaning \emph{all} within-group predictors randomly vary and correlate.
+#' Moreover, \emph{all} between-group predictors predict within-group coefficients.
+#' This means you \emph{should not include cross-level interaction terms}, because they are implicit in the model formulation.
+#' Within-group or between-group interaction terms may be included.
+#'
 #' \code{ICCier} uses the mixed effects location scale model (MELSM) to estimate an unconditional
 #' (intercept-only) or conditional location model with random effect of person.
 #' The within-person variances (i.e., residual, or error variances) are log-linearly modelled from a set of observation-level and
@@ -9,43 +37,48 @@
 #' The between-person variances are also log-linearly modelled from a set of person-level predictors,
 #' with coefficients \eqn{\eta}.
 #'
-#' @section Model specification:
+#' \subsection{Model specification}{
 #' The \code{ICCier} model imposes a model on the between-group SDs, within-group SDs, and the mean if a conditional ICC is desired.
 #' These models can be specified in two ways.
 #' One way is through a multiple-formula syntax, and another through a single-formula syntax.
 #' These are described in turn.
 #'
-#' The multiple-formula syntax at minimum requires \code{x} (outcome) and \code{group} (the grouping variable).
-#' If only these two are included, then the between and within-group variances are modeled with only intercepts.
-#' Random effects are included for the within-group variances.
-#' The between-group SD model is specified using \code{between ~ predictors}, where `predictors` must be group-level variables.
-#' The within-group SD model is specified using \code{within ~ Level_1_predictors | Level_2_predictors}.
-#' If conditional ICCs are desired, then the mean model can be specified using \code{mean ~ Level_1_predictors | Level_2_predictors}.
-#' Any of these can be excluded or included.
-#' If they are excluded, they default to intercept-only models.
+#' \subsection{Multiple-formula Syntax}{
+#'     The multiple-formula syntax at minimum requires \code{x} (outcome) and \code{group} (the grouping variable).
+#'     These are specified as raw variable names, not as character strings (i.e., \code{x=recall}, \emph{not} \code{x='recall'}).
+#'     If only these two are included, then the between and within-group variances are modeled with intercepts only.
+#'     The formulas are exemplified as follows:
+#'     \describe{
+#'       \item{\code{between ~ Sex + Age}}{The Between-group SD is modeled from between-group variables Sex and Age (and an intercept)}
+#'       \item{\code{within ~ trial + condition | Sex + Age}}{The Within-group SD is modeled from within-group variables trial and condition (and an intercept), and between-group predictors Sex and Age.}
+#'       \item{\code{mean ~ trial + condition | 1}}{Conditional Model. The mean is modeled from within-group variables trial and condition (and an intercept), and no between-group covariates.}
+#'     }
+#'     Any of these can be excluded or included.
+#'     If they are excluded, they default to intercept-only models.
+#' }
+#' \subsection{Single-formula Syntax}{
+#'     The single formula syntax can take two forms.
+#'     One form is shorter and describes an unconditional model.
+#'     The second, longer form describes a conditional model.
+#'     In total, the full formula consists of:
+#'     \enumerate{
+#'       \item Outcome (e.g., recall)
+#'       \item Grouping variable (e.g., subject)
+#'       \item Within-group predictors of within-group variance (e.g., trial and condition)
+#'       \item Between-group predictors of within-group variance (e.g., Sex and Age)
+#'       \item Between-group predictors of between-group variance (e.g., Sex and Age)
+#'       \item Within-group predictors of the mean. For conditional models. (e.g., trial and condition)
+#'       \item Between-group predictors of the mean. For conditional models. (e.g., intercept only)
+#'     }
+#'     For an unconditional model:
 #'
-#' The single formula syntax can take two forms.
-#' For an unconditional model:
-#' \code{outcome | group ~ WP_Level_1_formula | WP_Level_2_formula | BP_Level_2_formula}
+#'     \code{outcome | group ~ WG_Level_1_formula | WG_Level_2_formula | BG_Level_2_formula}
 #'
-#' For a conditional model:
-#' \code{outcome | group ~ WP_Level_1_formula | WP_Level_2_formula | BP_Level_2_formula | Mean_Level_1 | Mean_Level_2}
+#'     For a conditional model:
 #'
-#' The model is implemented in a 'maximal' manner, meaning \emph{all} level 1 effects are assumed to randomly vary and correlate.
-#' Moreover, \emph{all} level 2 variables predict each level 1 parameter.
-#' This means you \emph{should not include cross-level interaction terms}, because they are implicit in the model formulation.
-#' Level 1 or Level 2 interaction terms may be included.
-#'
-#' When using a \emph{conditional} model, the default ICCs are "unadjusted".
-#' In our case, the "unadjusted" ICC is still the random intercept variance divided by
-#' the random intercept variance and error variance.
-#' This makes sense, if the location model(s) are meant to be controlling variables.
-#' If you wish to have the so-called \emph{adjusted} ICC, use \code{adjusted = TRUE}.
-#' The \emph{adjusted} ICC instead uses the expected variance due to \emph{all random factors},
-#' divided by itself and the error variance.
-#' The adjusted ICC is therefore the proportion of random variance due to the random factors.
-#' This makes sense if the goal is to examine individual differences, and therefore examine the
-#' random effects themselves.
+#'     \code{outcome | group ~ WG_Level_1_formula | WG_Level_2_formula | BG_Level_2_formula | Mean_Level_1 | Mean_Level_2}
+#' }
+#' }
 #'
 #' @param x The outcome variable. Raw variable name (not a string).
 #' @param group The grouping variable. Raw variable name (not a string).
