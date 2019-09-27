@@ -107,12 +107,13 @@ print.ICCier <- function(object,...){
 #' Print method for ICCier summaries.
 #'
 #' @param object Output of \code{summary(ICCierObject)}.
+#' @param matrix Logical. Print coefficients as table (FALSE) or as HLM-like matrix (TRUE).
 #' @inheritParams print.ICCier
 #'
 #' @return Invisibly returns summary object.
 #' @export
 #' @keywords internal
-print.summary.ICCier <- function(object,...){
+print.summary.ICCier <- function(object,matrix=FALSE,...){
 
   dots <- list(...)
   digits <- dots$digits
@@ -130,10 +131,17 @@ print.summary.ICCier <- function(object,...){
   cat('\n--------------------\n')
 
   # Formatting
-  beta.sum <- .print_matrix(object,digits,'beta',...)
-  gamma.sum <- .print_matrix(object,digits,'gamma',...)
-  eta.sum <- .print_matrix(object,digits,'eta',...)
-  icc.sum <- .print_matrix(object,digits,'icc',...)
+  if(matrix){
+    beta.sum <- .print_matrix(object,digits,'beta',...)
+    gamma.sum <- .print_matrix(object,digits,'gamma',...)
+    eta.sum <- .print_matrix(object,digits,'eta',...)
+    icc.sum <- .print_matrix(object,digits,'icc',...)
+  } else {
+    beta.sum <- .print_table(object,digits,'beta',...)
+    gamma.sum <- .print_table(object,digits,'gamma',...)
+    eta.sum <- .print_table(object,digits,'eta',...)
+    icc.sum <- .print_table(object,digits,'icc',...)
+  }
 
   # Print
   cat('ICC Summary:','\n'); print(icc.sum,quote=FALSE)
@@ -147,6 +155,60 @@ print.summary.ICCier <- function(object,...){
   invisible(object)
 }
 
+#' Generate table for summary
+#'
+#' Creates coefficient matrix ala lm and others.
+#' @inheritParams .print_matrix
+#' @keywords internal
+.print_table <- function(object, digits, param, ...){
+  prob <- object$prob
+  probs <- c((1-prob)/2,1-(1-prob)/2)
+
+  if(param == 'icc'){
+    est <- c(object$estimate[['icc_mean']],object$estimate[['icc_sd']])
+    ci.L <- c(object$ci$L[['icc_mean']],object$ci$L[['icc_sd']])
+    ci.U <- c(object$ci$U[['icc_mean']],object$ci$U[['icc_sd']])
+    out <- round(cbind(est,ci.L,ci.U),digits)
+    rownames(out) <- c('Mean','SD')
+    colnames(out) <- c('Estimate',paste0(probs*100,'%'))
+    return(out)
+  }
+  # Extract
+  est <- object$estimate[[param]]
+  ci.L <- object$ci$L[[param]]
+  ci.U <- object$ci$U[[param]]
+
+  # Unroll
+  names.l1 <- rownames(est)
+  names.l2 <- colnames(est)
+  nameMat <- t(sapply(names.l1,function(n){
+                paste0(n,':',names.l2)
+              }))
+  names.vec <- as.vector(nameMat)
+  names.vec <- gsub('(Intercept):(Intercept)','(Intercept)',names.vec,fixed=TRUE)
+  if(param != 'eta'){
+    names.vec <- gsub(':\\(Intercept\\)|\\(Intercept\\):','',names.vec)
+  }
+
+  out <- cbind(as.vector(est),as.vector(ci.L),as.vector(ci.U))
+  out <- round(out,digits)
+  colnames(out) <- c('Estimate',paste0(probs*100,'%'))
+  rownames(out) <- names.vec
+  if(param == 'eta'){
+    out <- out[grepl('^Mean_',names.vec),]
+  }
+  return(out)
+
+}
+
+#' Generate character matrix for summary
+#'
+#' @param object summary.ICCier object
+#' @param digits digits
+#' @param param param (beta,gamma,eta,icc)
+#' @param ... Arguments passed to format.
+#'
+#' @keywords internal
 .print_matrix <- function(object, digits, param,...){
   # Extract
   if(param == 'icc'){
@@ -254,10 +316,11 @@ print.summary.ICCier <- function(object,...){
 
   P_l1 <- object$stan_data$P_l1
   P_l2 <- object$stan_data$P_l2
+  R_l2 <- object$stan_data$R_l2
   Q_l1 <- object$stan_data$Q_l1
-  eta <- matrix(eta, nrow = P_l2,ncol=P_l1 + Q_l1)
-  eta.L <- matrix(eta.ci[,1],nrow=P_l2)
-  eta.U <- matrix(eta.ci[,2],nrow=P_l2)
+  eta <- matrix(eta, nrow = R_l2,ncol=P_l1 + Q_l1)
+  eta.L <- matrix(eta.ci[,1],nrow=R_l2)
+  eta.U <- matrix(eta.ci[,2],nrow=R_l2)
 
   rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$bet
   colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c(fnames$l1.loc,fnames$l1)
