@@ -30,13 +30,6 @@
 #' This means you \emph{should not include cross-level interaction terms}, because they are implicit in the model formulation.
 #' Within-group or between-group interaction terms may be included.
 #'
-#' \code{ICCier} uses the mixed effects location scale model (MELSM) to estimate an unconditional
-#' (intercept-only) or conditional location model with random effect of person.
-#' The within-person variances (i.e., residual, or error variances) are log-linearly modelled from a set of observation-level and
-#' person-level predictors, with coefficients \eqn{\gamma}.
-#' The between-person variances are also log-linearly modelled from a set of person-level predictors,
-#' with coefficients \eqn{\eta}.
-#'
 #' \subsection{Model specification}{
 #' The \code{ICCier} model imposes a model on the between-group SDs, within-group SDs, and the mean if a conditional ICC is desired.
 #' These models can be specified in two ways.
@@ -92,6 +85,72 @@
 #' @importFrom parallel detectCores
 #' @export
 #'
+#' @examples
+#' \donttest{
+#' \dontrun{
+#' # trial = trial number
+#' # subject = subject identifier
+#' # sex, age = sex and age of subject
+#' # recall = trial-level outcome variable
+#' # cond = trial-level condition
+#' # ds = data.frame containing variables
+#'
+#' # Fit unconditional model
+#' fit <- ICCier(x=recall, group=subject, data=ds)
+#' fit <- ICCier(formula = recall|subject ~ 1|1|1, data=ds)
+#'
+#' # Fit unconditional model; predict Between-person variance from sex and age
+#' fit <- ICCier(recall, subject, ds, between ~ sex + age)
+#' fit <- ICCier(recall|subject ~ 1|1|sex + age,ds)
+#'
+#' # Fit unconditional model; predict Within-person variance from sex and age
+#' fit <- ICCier(recall, subject, ds, within ~ 1|sex + age)
+#' fit <- ICCier(recall|subject ~ 1|sex+age|1,ds)
+#'
+#' # Fit unconditional model; predict WP variance from both trial-level and person-level
+#' fit <- ICCier(recall, subject, ds, within ~ trial + cond|sex + age)
+#' fit <- ICCier(recall | subject ~ trial + cond|sex + age|1,ds)
+#'
+#' # Fit unconditional model; predict WP and BP variance from all variables
+#' fit <- ICCier(recall, subject, ds, within ~ trial + cond|sex + age, between ~ sex + age)
+#' fit <- ICCier(recall|subject ~ trial + cond|sex + age | sex + age, ds)
+#'
+#' #------------------
+#'
+#' # Fit conditional model; predict mean from all variables
+#' fit <- ICCier(recall, subject, ds, mean ~ trial + cond|sex + age)
+#' fit <- ICCier(recall|subject ~ 1|1|1|trial + cond| sex + age)
+#'
+#' # With adjusted ICCs
+#' fit <- ICCier(recall, subject, ds, mean ~ trial + cond|sex + age, adjusted=TRUE)
+#' fit <- ICCier(recall|subject ~ 1|1|1|trial + cond| sex + age, adjusted=TRUE)
+#'
+#' #------------------
+#' # Summarise the model
+#' summary(fit)
+#' summary(fit, digits=5)
+#'
+#' #------------------
+#' # Get predicted ICC for each row of the data
+#' fitted(fit)
+#'
+#' # Get predicted ICC(2) for each row of the data
+#' fitted(fit, occasion=ds$trial)
+#'
+#' # Predict new ICC values
+#' predict(fit, newdata=newDataFrame)
+#'
+#' # Get group-specific coefficients
+#' coef(fit)
+#'
+#' # Get group-specific random effects
+#' ranef(fit)
+#'
+#' # Compute the leave-one-out CV performance
+#' loo(fit)
+#'
+#' }
+#' }
 ICCier <- function(x,...){
   if(missing(x) | class(substitute(x)) == 'call'){
     x <- formula()
