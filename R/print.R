@@ -96,9 +96,9 @@ print.ICCier <- function(object,...){
 
 
   cat('Coefficients:','\n')
-  cat('Location: \n');print(t(.get_beta(object)$mu),...); cat('\n\n')
-  cat('Within-person Variance: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
-  cat('Between-person Variance: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
+  cat('Mean Model: \n');print(t(.get_beta(object)$mu),...); cat('\n\n')
+  cat('Within-group (log) SD: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
+  cat('Between-group (log) SD: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
   cat('Random Effect Correlations: \n'); print(.get_omega(object)$omega,...); cat('\n')
 
   invisible(object)
@@ -139,9 +139,9 @@ print.summary.ICCier <- function(object,...){
   cat('ICC Summary:','\n'); print(icc.sum,quote=FALSE)
   cat('\n--------------------\n')
   cat('Coefficients:','\n\n')
-  cat('Location Model: \n');print(beta.sum,quote=FALSE,...);cat('\n')
-  cat('Within-person Variance: \n'); print(gamma.sum,quote=FALSE); cat('\n')
-  cat('Between-person Variance: \n'); print(eta.sum,quote=FALSE); cat('\n')
+  cat('Mean Model: \n');print(beta.sum,quote=FALSE,...);cat('\n')
+  cat('Within-group (log) SD: \n'); print(gamma.sum,quote=FALSE); cat('\n')
+  cat('Between-group (log) SD: \n'); print(eta.sum,quote=FALSE); cat('\n')
   cat('Random Effect Correlations: \n'); print(round(object$estimate$omega,digits),...); cat('\n')
 
   invisible(object)
