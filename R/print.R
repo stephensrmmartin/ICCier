@@ -195,7 +195,7 @@ print.summary.ICCier <- function(object,matrix=FALSE,...){
   colnames(out) <- c('Estimate',paste0(probs*100,'%'))
   rownames(out) <- names.vec
   if(param == 'eta'){
-    out <- out[grepl('^Mean_',names.vec),]
+    out <- out[grepl('^Mean_',names.vec),,drop=FALSE]
   }
   return(out)
 
