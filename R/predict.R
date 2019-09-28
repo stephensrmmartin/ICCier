@@ -230,8 +230,8 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 
 #' Extract ICC values.
 #'
-#' @param object ICCier object
-#' @param summary Logical. Whether to return summary (mean, intervals) of ICCs (TRUE), or posterior samples (FALSE)
+#' @param object ICCier object.
+#' @param summary Logical. Whether to return summary (mean, intervals), or posterior samples (FALSE)
 #' @inheritParams posterior_interval.ICCier
 #' @param inc_group Logical. Whether to include the grouping variable with the estimates.
 #' @param occasion Default: NULL. Vector representing the occasion number. One value per row in newdata. For estimating composite score reliability. If unspecified, set to NULL (default), and raw score ICCs are estimated.
@@ -241,7 +241,7 @@ predict.ICCier <- function(object, newdata=NULL, draws=NULL,summary=TRUE,prob=.9
 #' If \code{summary=FALSE}, an S by N matrix containing the S posterior samples for N observations.
 #' @export
 #'
-fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE,occasion=NULL){
+fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE,occasion=NULL,...){
   if(summary) {
     out <- as.data.frame(cbind(mean=matrix(.posterior_mean(object,pars='icc'),ncol=1),posterior_interval(object,prob=prob,pars='icc')))
     colnames(out)[1] <- 'mean'
@@ -264,7 +264,7 @@ fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE,occasion
 #'
 #' Takes ICCier object and returns group-specific values.
 #'
-#' @param object ICCier object
+#' @param object ICCier object.
 #' @param predict Logical (Default = FALSE). If TRUE, the group-specific effect is the predicted value and the random effect; e.g., \eqn{g_{0i} = X^{(2)}G + u_{0i}}.
 #' If FALSE, the group-specific effect is the fixed effect and the random effect; e.g., \eqn{g_{0i} = g_0 + u_{0i}}.
 #' The latter is akin to what brms computes.
@@ -273,7 +273,7 @@ fitted.ICCier <- function(object, summary=TRUE, prob=.95,inc_group=TRUE,occasion
 #' @inherit ranef.ICCier return
 #' @export
 #'
-coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE){
+coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE,...){
   ranef_samps <- .get_random_effect_samples(object)
   fnames <- .get_formula_names(object,prefix = TRUE)
   L <- (1-prob)/2
@@ -338,9 +338,11 @@ coef.ICCier <- function(object,summary = TRUE,prob = .95,predict=FALSE){
 #' @return 3D array. If `summary = TRUE` (default): `[group, statistic, random effect]`. If `summary = FALSE`: `[group, random effect, MCMC sample]`
 #' @export
 #' @importFrom nlme ranef
+#' @method ranef ICCier
+#' @aliases ranef
 #' @export ranef
 #'
-ranef.ICCier <- function(object,summary = TRUE, prob = .95){
+ranef.ICCier <- function(object,summary = TRUE, prob = .95,...){
   ranef_samps <- .get_random_effect_samples(object)
   fnames <- .get_formula_names(object,prefix=TRUE)
   L <- (1-prob)/2

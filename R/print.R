@@ -84,12 +84,13 @@ summary.ICCier <- function(object,prob=.95,...){
 
 #' Print method for ICCIer object.
 #'
-#' @param object ICCier object.
+#' @param x ICCier object.
 #' @param ... Further arguments to \code{print}.
 #'
 #' @export
 #' @keywords internal
-print.ICCier <- function(object,...){
+print.ICCier <- function(x,...){
+  object <- x
   cat('Formula:',deparse(object$formula),'\n')
   cat('Type: ',.get_model_type(object),'\n')
   cat('\n')
@@ -106,14 +107,15 @@ print.ICCier <- function(object,...){
 
 #' Print method for ICCier summaries.
 #'
-#' @param object Output of \code{summary(ICCierObject)}.
+#' @param x Output of \code{summary(ICCierObject)}.
 #' @param matrix Logical. Print coefficients as table (FALSE) or as HLM-like matrix (TRUE).
 #' @inheritParams print.ICCier
 #'
 #' @return Invisibly returns summary object.
 #' @export
 #' @keywords internal
-print.summary.ICCier <- function(object,matrix=FALSE,...){
+print.summary.ICCier <- function(x,matrix=FALSE,...){
+  object <- x
 
   dots <- list(...)
   digits <- dots$digits
