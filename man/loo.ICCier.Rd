@@ -9,6 +9,8 @@
 }
 \arguments{
 \item{x}{ICCier object.}
+
+\item{...}{Passed to \code{\link[loo]{loo}}}
 }
 \value{
 Loo object. See \code{\link[loo]{loo}}.

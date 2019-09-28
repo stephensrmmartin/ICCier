@@ -56,6 +56,7 @@ nsamples.ICCier <- function(object, ...){
 #' Compute leave-one-out (LOO).
 #'
 #' @param x ICCier object.
+#' @param ... Passed to \code{\link[loo]{loo}}
 #'
 #' @return Loo object. See \code{\link[loo]{loo}}.
 #' @export
