@@ -2,6 +2,7 @@
 % Please edit documentation in R/rstantools_defs.R
 \name{nsamples.ICCier}
 \alias{nsamples.ICCier}
+\alias{nsamples}
 \title{Extract the number of posterior samples.}
 \usage{
 \method{nsamples}{ICCier}(object, ...)

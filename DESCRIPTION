@@ -1,7 +1,7 @@
 Package: ICCier
 Title: Estimate and Predict Per-Group and Per-Observation ICCs
-Version: 0.0.0.9200
-Date: 2019-08-21
+Version: 0.0.0.9300
+Date: 2019-09-27
 Authors@R: 
     c(person(given = "Stephen R.",
            family = "Martin",

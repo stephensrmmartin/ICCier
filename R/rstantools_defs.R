@@ -27,6 +27,8 @@ posterior_interval.ICCier <- function(object, prob = .95, pars, ...){
 #' @export
 #' @importFrom rstantools log_lik
 #' @export log_lik
+#' @method log_lik ICCier
+#' @aliases log_lik
 #'
 #' @keywords internal
 log_lik.ICCier <- function(object,...){
@@ -43,6 +45,8 @@ log_lik.ICCier <- function(object,...){
 #' @export
 #' @importFrom rstantools nsamples
 #' @export nsamples
+#' @method nsamples ICCier
+#' @aliases nsamples
 #' @keywords internal
 nsamples.ICCier <- function(object, ...){
   n.samps <- (object$fit@sim$iter - object$fit@sim$warmup)*object$fit@sim$chains
@@ -51,14 +55,17 @@ nsamples.ICCier <- function(object, ...){
 
 #' Compute leave-one-out (LOO).
 #'
-#' @param object ICCier object.
+#' @param x ICCier object.
+#' @param ... Passed to \code{\link[loo]{loo}}
 #'
 #' @return Loo object. See \code{\link[loo]{loo}}.
 #' @export
 #' @import loo
 #' @export loo
-#' @keywords internal
-loo.ICCier <- function(object,...){
+#' @method loo ICCier
+#' @aliases loo
+loo.ICCier <- function(x,...){
+  object <- x
   LL_array <- log_lik(object,merge_chains=FALSE)
   r_eff <- relative_eff(exp(LL_array))
   loo(x=LL_array,r_eff=r_eff,...)

@@ -33,6 +33,7 @@ summary.ICCier <- function(object,prob=.95,...){
   icc_sd <- .get_icc_sd(object,prob,...)
   prob <- prob
   formula <- object$formula
+  type <- .get_model_type(object)
 
   chains <- object$fit@sim$chains
   iter <- list(iter=object$fit@sim$iter)
@@ -40,7 +41,7 @@ summary.ICCier <- function(object,prob=.95,...){
   iter$total <- iter$post*chains
   K <- object$stan_data$K
   N <- object$stan_data$N
-  meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K,digits=digits,type=object$type)
+  meta <- list(diagnostics=object$diagnostics,iter=iter,chains=chains,N=N,K=K,digits=digits,type=type)
 
   estimate <- list(beta = t(beta$mu),
                 gamma = t(gamma$gamma),
@@ -83,21 +84,22 @@ summary.ICCier <- function(object,prob=.95,...){
 
 #' Print method for ICCIer object.
 #'
-#' @param object ICCier object.
+#' @param x ICCier object.
 #' @param ... Further arguments to \code{print}.
 #'
 #' @export
 #' @keywords internal
-print.ICCier <- function(object,...){
+print.ICCier <- function(x,...){
+  object <- x
   cat('Formula:',deparse(object$formula),'\n')
-  cat('Type: ',ifelse(object$type$conditional,paste0('Conditional (',ifelse(object$type$adjusted,'Adjusted','Unadjusted'),')'),'Unconditional'),'\n')
+  cat('Type: ',.get_model_type(object),'\n')
   cat('\n')
 
 
   cat('Coefficients:','\n')
-  cat('Location: \n');print(t(.get_beta(object)$mu),...); cat('\n\n')
-  cat('Within-person Variance: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
-  cat('Between-person Variance: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
+  cat('Mean Model: \n');print(t(.get_beta(object)$mu),...); cat('\n\n')
+  cat('Within-group (log) SD: \n'); print(t(.get_gamma(object)$gamma),...); cat('\n')
+  cat('Between-group (log) SD: \n'); print(t(.get_eta(object)$eta),...); cat('\n')
   cat('Random Effect Correlations: \n'); print(.get_omega(object)$omega,...); cat('\n')
 
   invisible(object)
@@ -105,13 +107,15 @@ print.ICCier <- function(object,...){
 
 #' Print method for ICCier summaries.
 #'
-#' @param object Output of \code{summary(ICCierObject)}.
+#' @param x Output of \code{summary(ICCierObject)}.
+#' @param matrix Logical. Print coefficients as table (FALSE) or as HLM-like matrix (TRUE).
 #' @inheritParams print.ICCier
 #'
 #' @return Invisibly returns summary object.
 #' @export
 #' @keywords internal
-print.summary.ICCier <- function(object,...){
+print.summary.ICCier <- function(x,matrix=FALSE,...){
+  object <- x
 
   dots <- list(...)
   digits <- dots$digits
@@ -119,60 +123,131 @@ print.summary.ICCier <- function(object,...){
     digits <- object$meta$digits
   }
 
+  # Header
   cat('Formula:',deparse(object$formula),'\n')
-  cat('Type: ',ifelse(object$meta$type$conditional,paste0('Conditional (',ifelse(object$meta$type$adjusted,'Adjusted','Unadjusted'),')'),'Unconditional'),'\n')
+  cat('Type: ',object$meta$type,'\n')
   cat('Number of observations:', object$meta$N,'\n')
   cat('Number of groups:',object$meta$K,'\n')
   cat('\n--------------------\n')
   .print_diagnostics(object$meta$diagnostics)
   cat('\n--------------------\n')
 
-  # beta.sum <- cbind(format(round(object$estimate$beta,digits),...),paste0('[',format(round(object$ci$L$beta,digits),...),' ',format(round(object$ci$U$beta,digits),...),']'))
-  # colnames(beta.sum) <- c('',paste0(object$prob*100,'%'))
-  # rownames(beta.sum) <- ''
-  beta.sum <- cbind(format(round(object$estimate$beta,digits),...),
-                    matrix(paste0('[',format(round(object$ci$L$beta,digits),...),
-                                  ' ',
-                                  format(round(object$ci$U$beta,digits),...),
-                                  ']'),
-                           nrow=nrow(object$estimate$beta)))
-  colnames(beta.sum)[colnames(beta.sum) == ''] <- paste0(object$prob*100,'%')
-  names(dimnames(beta.sum)) <- names(dimnames(object$estimate$beta))
+  # Formatting
+  if(matrix){
+    beta.sum <- .print_matrix(object,digits,'beta',...)
+    gamma.sum <- .print_matrix(object,digits,'gamma',...)
+    eta.sum <- .print_matrix(object,digits,'eta',...)
+    icc.sum <- .print_matrix(object,digits,'icc',...)
+  } else {
+    beta.sum <- .print_table(object,digits,'beta',...)
+    gamma.sum <- .print_table(object,digits,'gamma',...)
+    eta.sum <- .print_table(object,digits,'eta',...)
+    icc.sum <- .print_table(object,digits,'icc',...)
+  }
 
-  gamma.sum <- cbind(format(round(object$estimate$gamma,digits),...),
-                     matrix(paste0('[',format(round(object$ci$L$gamma,digits),...),
-                                   ' ',
-                                   format(round(object$ci$U$gamma,digits),...),
-                                   ']'),
-                            nrow=nrow(object$estimate$gamma)))
-  colnames(gamma.sum)[colnames(gamma.sum) == ''] <- paste0(object$prob*100,'%')
-  names(dimnames(gamma.sum)) <- names(dimnames(object$estimate$gamma))
-
-  eta.sum <- cbind(format(round(object$estimate$eta,digits),...),
-                   matrix(paste0('[',format(round(object$ci$L$eta,digits),...),
-                                 ' ',
-                                 format(round(object$ci$U$eta,digits),...),
-                                 ']'),
-                          nrow=nrow(object$estimate$eta)))
-  colnames(eta.sum)[colnames(eta.sum) == ''] <- paste0(object$prob*100,'%')
-  names(dimnames(eta.sum)) <- names(dimnames(object$estimate$eta))
-
-  icc.sum <- cbind(format(round(c(object$estimate$icc_mean,object$estimate$icc_sd),digits)),
-                   paste0('[',format(round(c(object$ci$L$icc_mean,object$ci$L$icc_sd),digits)),' ',
-                          format(round(c(object$ci$U$icc_mean,object$ci$U$icc_sd),digits)),']'))
-  colnames(icc.sum) <- c('',paste0(object$prob*100,'%'))
-  rownames(icc.sum) <- c('Mean','SD')
-
-
+  # Print
   cat('ICC Summary:','\n'); print(icc.sum,quote=FALSE)
   cat('\n--------------------\n')
   cat('Coefficients:','\n\n')
-  cat('Location Model: \n');print(beta.sum,quote=FALSE,...);cat('\n')
-  cat('Within-person Variance: \n'); print(gamma.sum,quote=FALSE); cat('\n')
-  cat('Between-person Variance: \n'); print(eta.sum,quote=FALSE); cat('\n')
+  cat('Mean Model: \n');print(beta.sum,quote=FALSE,...);cat('\n')
+  cat('Within-group (log) SD: \n'); print(gamma.sum,quote=FALSE); cat('\n')
+  cat('Between-group (log) SD: \n'); print(eta.sum,quote=FALSE); cat('\n')
   cat('Random Effect Correlations: \n'); print(round(object$estimate$omega,digits),...); cat('\n')
 
   invisible(object)
+}
+
+#' Generate table for summary
+#'
+#' Creates coefficient matrix ala lm and others.
+#' @inheritParams .print_matrix
+#' @keywords internal
+.print_table <- function(object, digits, param, ...){
+  prob <- object$prob
+  probs <- c((1-prob)/2,1-(1-prob)/2)
+
+  if(param == 'icc'){
+    est <- c(object$estimate[['icc_mean']],object$estimate[['icc_sd']])
+    ci.L <- c(object$ci$L[['icc_mean']],object$ci$L[['icc_sd']])
+    ci.U <- c(object$ci$U[['icc_mean']],object$ci$U[['icc_sd']])
+    out <- round(cbind(est,ci.L,ci.U),digits)
+    rownames(out) <- c('Mean','SD')
+    colnames(out) <- c('Estimate',paste0(probs*100,'%'))
+    return(out)
+  }
+  # Extract
+  est <- object$estimate[[param]]
+  ci.L <- object$ci$L[[param]]
+  ci.U <- object$ci$U[[param]]
+
+  # Unroll
+  names.l1 <- rownames(est)
+  names.l2 <- colnames(est)
+  nameMat <- t(sapply(names.l1,function(n){
+                paste0(n,':',names.l2)
+              }))
+  names.vec <- as.vector(nameMat)
+  names.vec <- gsub('(Intercept):(Intercept)','(Intercept)',names.vec,fixed=TRUE)
+  if(param != 'eta'){
+    names.vec <- gsub(':\\(Intercept\\)|\\(Intercept\\):','',names.vec)
+  }
+
+  out <- cbind(as.vector(est),as.vector(ci.L),as.vector(ci.U))
+  out <- round(out,digits)
+  colnames(out) <- c('Estimate',paste0(probs*100,'%'))
+  rownames(out) <- names.vec
+  if(param == 'eta'){
+    out <- out[grepl('^Mean_',names.vec),,drop=FALSE]
+  }
+  return(out)
+
+}
+
+#' Generate character matrix for summary
+#'
+#' @param object summary.ICCier object
+#' @param digits digits
+#' @param param param (beta,gamma,eta,icc)
+#' @param ... Arguments passed to format.
+#'
+#' @keywords internal
+.print_matrix <- function(object, digits, param,...){
+  # Extract
+  if(param == 'icc'){
+    est <-  matrix(unlist(object$estimate[c('icc_mean','icc_sd')],use.names = FALSE),ncol=1)
+    ci.L <- matrix(unlist(object$ci$L[c('icc_mean','icc_sd')],use.names = FALSE),ncol=1)
+    ci.U <- matrix(unlist(object$ci$U[c('icc_mean','icc_sd')],use.names = FALSE),ncol=1)
+  } else {
+    est <- object$estimate[[param]]
+    ci.L <- object$ci$L[[param]]
+    ci.U <- object$ci$U[[param]]
+  }
+
+  # Format
+  est <-  format(round(est,digits),...)
+  ci.L <- format(round(ci.L,digits),...)
+  ci.U <- format(round(ci.U,digits),...)
+
+  # Add brackets
+  ci <- paste0('[',ci.L,' ',ci.U,']')
+  ci <- matrix(ci,nrow=nrow(est))
+
+  # Combine and rename
+  out <- cbind(est, ci)
+  if(param == 'icc'){
+    colnames(out) <- c('',paste0(object$prob*100,'%'))
+    rownames(out) <- c('Mean','SD')
+  } else{
+    colnames(out)[colnames(out) == ''] <- paste0(object$prob*100,'%')
+  }
+  names(dimnames(out)) <- names(dimnames(est))
+  return(out)
+}
+
+.get_model_type <- function(object){
+  type <- object$type
+  typeString <- ifelse(type$conditional,paste0('Conditional (',ifelse(type$adjusted,'Adjusted','Unadjusted'),')'),'Unconditional')
+  return(typeString)
 }
 
 .get_beta <- function(object,prob=.95,...){
@@ -243,14 +318,15 @@ print.summary.ICCier <- function(object,...){
 
   P_l1 <- object$stan_data$P_l1
   P_l2 <- object$stan_data$P_l2
+  R_l2 <- object$stan_data$R_l2
   Q_l1 <- object$stan_data$Q_l1
-  eta <- matrix(eta, nrow = P_l2,ncol=P_l1 + Q_l1)
-  eta.L <- matrix(eta.ci[,1],nrow=P_l2)
-  eta.U <- matrix(eta.ci[,2],nrow=P_l2)
+  eta <- matrix(eta, nrow = R_l2,ncol=P_l1 + Q_l1)
+  eta.L <- matrix(eta.ci[,1],nrow=R_l2)
+  eta.U <- matrix(eta.ci[,2],nrow=R_l2)
 
-  rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$l2
+  rownames(eta) <- rownames(eta.L) <- rownames(eta.U) <- fnames$bet
   colnames(eta) <- colnames(eta.L) <- colnames(eta.U) <- c(fnames$l1.loc,fnames$l1)
-  names(dimnames(eta)) <- names(dimnames(eta.L)) <- names(dimnames(eta.U)) <- c('Level 2','')
+  names(dimnames(eta)) <- names(dimnames(eta.L)) <- names(dimnames(eta.U)) <- c('Bet. Group','')
 
   out <- mget(c('eta','eta.L','eta.U'))
 
@@ -308,13 +384,14 @@ print.summary.ICCier <- function(object,...){
   l2 <- colnames(object$stan_data$x_sca_l2)
   l1.loc <- colnames(object$stan_data$x_loc_l1)
   l2.loc <- colnames(object$stan_data$x_loc_l2)
+  bet  <- colnames(object$stan_data$x_bet_l2)
   outcome <- colnames(model.part(object$formula,object$data,lhs=1))
   grouping <- colnames(model.part(object$formula,object$data,lhs=2))
   if(prefix){
     l1.loc <- paste0('Mean_',l1.loc)
     l2.loc <- paste0('Mean_',l2.loc)
   }
-  return(mget(c('l1','l2','outcome','grouping','l1.loc','l2.loc')))
+  return(mget(c('l1','l2','outcome','grouping','l1.loc','l2.loc','bet')))
 }
 
 .print_diagnostics <- function(diagnostics){

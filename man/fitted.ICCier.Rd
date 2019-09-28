@@ -5,12 +5,12 @@
 \title{Extract ICC values.}
 \usage{
 \method{fitted}{ICCier}(object, summary = TRUE, prob = 0.95,
-  inc_group = TRUE, occasion = NULL)
+  inc_group = TRUE, occasion = NULL, ...)
 }
 \arguments{
-\item{object}{ICCier object}
+\item{object}{ICCier object.}
 
-\item{summary}{Logical. Whether to return summary (mean, intervals) of ICCs (TRUE), or posterior samples (FALSE)}
+\item{summary}{Logical. Whether to return summary (mean, intervals), or posterior samples (FALSE)}
 
 \item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
 

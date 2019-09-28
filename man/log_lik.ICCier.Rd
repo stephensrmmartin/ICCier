@@ -2,6 +2,7 @@
 % Please edit documentation in R/rstantools_defs.R
 \name{log_lik.ICCier}
 \alias{log_lik.ICCier}
+\alias{log_lik}
 \title{Extract pointwise log-likelihood}
 \usage{
 \method{log_lik}{ICCier}(object, ...)

@@ -11,9 +11,11 @@ data {
   int K;
   int P_l1;
   int P_l2;
+  int R_l2;
   int group[N];
   matrix[N,P_l1] x_sca_l1; // log(sigma) ~ x_sca_l1
   matrix[K,P_l2] x_sca_l2; // gammas ~ x_sca_l2 // For now, assume x_sca_l2 also predicts var(RE)
+  matrix[K,R_l2] x_bet_l2;
   vector[N] y;
 }
 
@@ -25,12 +27,12 @@ parameters {
   matrix[K, P_l1 + 1] mu_gamma_group_random_z;
   cholesky_factor_corr[P_l1 + 1] mu_gamma_group_random_cor_L;
   // vector[P_l1] mu_gamma_group_random_log_sd;
-  matrix[P_l2, P_l1 + 1] eta; // log(sd(u)) = x_sca_l2*eta
+  matrix[R_l2, P_l1 + 1] eta; // log(sd(u)) = x_sca_l2*eta
   matrix[P_l2, P_l1] gamma;
 }
 
 transformed parameters {
-  matrix[K,P_l1 + 1] mu_gamma_group_random_sd = exp(x_sca_l2*eta);
+  matrix[K,P_l1 + 1] mu_gamma_group_random_sd = exp(x_bet_l2*eta);
   matrix[K,P_l1 + 1] mu_gamma_group_random;
   vector[K] mu_group;
   matrix[K,P_l1] gamma_group;
