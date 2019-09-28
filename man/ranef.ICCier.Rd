@@ -2,16 +2,19 @@
 % Please edit documentation in R/predict.R
 \name{ranef.ICCier}
 \alias{ranef.ICCier}
+\alias{ranef}
 \title{Extract random effect values}
 \usage{
-\method{ranef}{ICCier}(object, summary = TRUE, prob = 0.95)
+\method{ranef}{ICCier}(object, summary = TRUE, prob = 0.95, ...)
 }
 \arguments{
 \item{object}{ICCier object}
 
-\item{summary}{Logical. Whether to return summary (mean, intervals) of ICCs (TRUE), or posterior samples (FALSE)}
+\item{summary}{Logical. Whether to return summary (mean, intervals), or posterior samples (FALSE)}
 
 \item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
+
+\item{...}{Not currently used.}
 }
 \value{
 3D array. If `summary = TRUE` (default): `[group, statistic, random effect]`. If `summary = FALSE`: `[group, random effect, MCMC sample]`

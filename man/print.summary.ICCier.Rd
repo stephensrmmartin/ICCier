@@ -4,10 +4,10 @@
 \alias{print.summary.ICCier}
 \title{Print method for ICCier summaries.}
 \usage{
-\method{print}{summary.ICCier}(object, matrix = FALSE, ...)
+\method{print}{summary.ICCier}(x, matrix = FALSE, ...)
 }
 \arguments{
-\item{object}{Output of \code{summary(ICCierObject)}.}
+\item{x}{Output of \code{summary(ICCierObject)}.}
 
 \item{matrix}{Logical. Print coefficients as table (FALSE) or as HLM-like matrix (TRUE).}
 

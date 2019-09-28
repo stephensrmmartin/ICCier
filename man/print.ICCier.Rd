@@ -4,10 +4,10 @@
 \alias{print.ICCier}
 \title{Print method for ICCIer object.}
 \usage{
-\method{print}{ICCier}(object, ...)
+\method{print}{ICCier}(x, ...)
 }
 \arguments{
-\item{object}{ICCier object.}
+\item{x}{ICCier object.}
 
 \item{...}{Further arguments to \code{print}.}
 }

@@ -15,7 +15,7 @@
 
 \item{draws}{Number of draws to use from posterior samples for prediction. Default: All of them.}
 
-\item{summary}{Logical. Whether to return summary (mean, intervals) of ICCs (TRUE), or posterior samples (FALSE)}
+\item{summary}{Logical. Whether to return summary (mean, intervals), or posterior samples (FALSE)}
 
 \item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
 

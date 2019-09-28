@@ -5,18 +5,20 @@
 \title{Extract group-specific values}
 \usage{
 \method{coef}{ICCier}(object, summary = TRUE, prob = 0.95,
-  predict = FALSE)
+  predict = FALSE, ...)
 }
 \arguments{
-\item{object}{ICCier object}
+\item{object}{ICCier object.}
 
-\item{summary}{Logical. Whether to return summary (mean, intervals) of ICCs (TRUE), or posterior samples (FALSE)}
+\item{summary}{Logical. Whether to return summary (mean, intervals), or posterior samples (FALSE)}
 
 \item{prob}{A number p (0 < p < 1) indicating the desired probability mass to include in the intervals.}
 
 \item{predict}{Logical (Default = FALSE). If TRUE, the group-specific effect is the predicted value and the random effect; e.g., \eqn{g_{0i} = X^{(2)}G + u_{0i}}.
 If FALSE, the group-specific effect is the fixed effect and the random effect; e.g., \eqn{g_{0i} = g_0 + u_{0i}}.
 The latter is akin to what brms computes.}
+
+\item{...}{Not currently used.}
 }
 \value{
 3D array. If `summary = TRUE` (default): `[group, statistic, random effect]`. If `summary = FALSE`: `[group, random effect, MCMC sample]`

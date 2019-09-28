@@ -2,12 +2,13 @@
 % Please edit documentation in R/rstantools_defs.R
 \name{loo.ICCier}
 \alias{loo.ICCier}
+\alias{loo}
 \title{Compute leave-one-out (LOO).}
 \usage{
-\method{loo}{ICCier}(object, ...)
+\method{loo}{ICCier}(x, ...)
 }
 \arguments{
-\item{object}{ICCier object.}
+\item{x}{ICCier object.}
 }
 \value{
 Loo object. See \code{\link[loo]{loo}}.
