@@ -13,6 +13,7 @@
 #' @importFrom rstan sampling
 #' @importFrom stats fitted model.frame model.matrix quantile rnorm sd terms
 #' @importFrom utils data head
+#' @importFrom stats formula
 #'
 #' @references
 #' Stan Development Team (2018). RStan: the R interface to Stan. R package version 2.18.2. http://mc-stan.org
