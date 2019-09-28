@@ -16,4 +16,3 @@ Loo object. See \code{\link[loo]{loo}}.
 \description{
 Compute leave-one-out (LOO).
 }
-\keyword{internal}

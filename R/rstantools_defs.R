@@ -63,7 +63,6 @@ nsamples.ICCier <- function(object, ...){
 #' @export loo
 #' @method loo ICCier
 #' @aliases loo
-#' @keywords internal
 loo.ICCier <- function(x,...){
   object <- x
   LL_array <- log_lik(object,merge_chains=FALSE)
