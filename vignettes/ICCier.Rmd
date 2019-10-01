@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 In this vignette, we describe the rationale for specific ICCs, and walk the reader through the package with various examples.
 First, we provide some background on ICCs and their variety of forms.
 In this section, we introduce the reader to the notation used throughout the rest of the vignette.
-Second, we describe the notion and rationale for varying ICCs (e.g., group-specific ICCs).
+Second, we describe the rationale for varying ICCs (e.g., group-specific ICCs).
 Third, we describe the Bayesian mixed effects location scale model (MELSM) that underlies the estimation of these ICCs.
 The MELSM is the "engine" that makes varying ICCs possible, and we encourage all readers to read this section to best understand the model output.
 Fourth, we walk through the `ICCier` functions, followed by numerous examples for a variety of scenarios.
