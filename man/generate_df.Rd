@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_data.R
 \name{generate_df}
 \alias{generate_df}
-\title{Generate data frame for testing.}
+\title{Generate data frame for testing. (Deprecated)}
 \usage{
 generate_df(n, K, beta, gamma, eta, cor_structure)
 }

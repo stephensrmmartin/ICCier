@@ -1,6 +1,140 @@
 #' Generate data for testing.
 #'
 #' Generates data for use in testing.
+#' Takes a formula for the model spec (See \code{\link{ICCier}}), returns list of params, metadata, and stan data.
+#'
+#' @param formula Formula. See \code{\link{ICCier}}.
+#' @param n Number of observations per group.
+#' @param K Number of groups.
+#' @param beta Location model fixed coefficients. Q_L2xQ_L1.
+#' @param gamma Scale model fixed coefficients. P_L2xP_l1.
+#' @param eta Between-group coefficients. R_L2x(Q_l1 + P_l1).
+#' @param cor_structure 3-length vector describing correlation matrix of REs.
+#'
+#' @return ICCier_dataget object. List of params, meta, and data.
+#' @import Formula
+#' @keywords internal
+datagen.formula <- function(formula,n,K,beta,gamma,eta,cor_structure,...){
+  N <- n*K
+  formula <- as.Formula(formula)
+  Q_l1 <- ncol(beta)
+  P_l1 <- ncol(gamma)
+  Q_l2 <- nrow(beta)
+  P_l2 <- nrow(gamma)
+  R_l2 <- nrow(eta)
+
+  # Get names
+  outcome <- all.vars(formula(formula,lhs=1,rhs=0))
+  group <- all.vars(formula(formula,lhs=2,rhs=0))
+  L2 <- all.vars(formula(formula,lhs=0,rhs=c(2,3,5)))
+  L1 <- all.vars(formula(formula,lhs=0,rhs=c(1,4)))
+
+  # Create L2 model frame
+  x_l2 <- data.frame(group = 1:K)
+  colnames(x_l2)[1] <- group
+  if(length(L2) > 0){
+    x_l2[,L2] <- mvtnorm::rmvnorm(K,sigma=diag(1,length(L2)))
+  }
+
+  # Create L1 model frame
+  x_l1 <- data.frame(group=rep(1:K,each=n))
+  colnames(x_l1)[1] <- group
+  if(length(L1) > 0){
+    x_l1[,L1] <- mvtnorm::rmvnorm(N,sigma=diag(1,length(L1)))
+  }
+
+  x_sca_l1 <- model.matrix(formula(formula,rhs=1,lhs=0),x_l1)
+  x_sca_l2 <- model.matrix(formula(formula,rhs=2,lhs=0),x_l2)
+  x_bet_l2 <- model.matrix(formula(formula,rhs=3,lhs=0),x_l2)
+  x_loc_l1 <- model.matrix(formula(formula,rhs=4,lhs=0),x_l1)
+  x_loc_l2 <- model.matrix(formula(formula,rhs=5,lhs=0),x_l2)
+
+  group_map <- list(group_L1=model.frame(formula,x_l1,lhs=2,rhs=0),group_L2=model.frame(formula,x_l2,lhs=2,rhs=0))
+
+  # Package up spec
+  params <- list(beta=beta,gamma=gamma,eta=eta,Omega=.omegagen(cor_structure,P_l1,Q_l1),betaGamma_random_cor_L = t(chol(.omegagen(cor_structure,P_l1,Q_l1))))
+  meta <- list(n=n,K=K,N=N,Q_l1=Q_l1,P_l1=P_l1,Q_l2=Q_l2,P_l2=P_l2,R_l2=R_l2,group_map=group_map,outcome = outcome,formula=formula)
+  data <- mget(c('x_sca_l1','x_sca_l2','x_bet_l2','x_loc_l1','x_loc_l2','N','n','K','Q_l1','Q_l2','P_l1','P_l2','R_l2'))
+  data$group = group_map$group_L1[[1]]
+
+  spec <- list(params=params,meta=meta,data=data)
+  .datagen(spec)
+
+}
+
+#' Generate Omega matrix
+#'
+#' Generates Omega matrix from a cor_structure specification
+#'
+#' @param cor_structure 3-length Vector of (loc-loc, loc-sca, sca-sca) correlations.
+#' @param P_l1 Number of random scale effects
+#' @param Q_l1 Number of random loc effects
+#'
+#' @return Correlation matrix
+#' @keywords internal
+.omegagen <- function(cor_structure,P_l1,Q_l1){
+  Omega <- matrix(0,P_l1 + Q_l1, P_l1 + Q_l1)
+  diag(Omega) <- 1
+  Omega[1:Q_l1,1:Q_l1][lower.tri(Omega[1:Q_l1,1:Q_l1])] <- cor_structure[1]
+  Omega[(Q_l1 + 1):nrow(Omega),(Q_l1 + 1):ncol(Omega)][lower.tri(Omega[(Q_l1 + 1):nrow(Omega),(Q_l1 + 1):ncol(Omega)])] <- cor_structure[3]
+  Omega[(Q_l1 + 1):nrow(Omega), 1:Q_l1] <- cor_structure[2]
+  Omega <- Matrix::forceSymmetric(Omega,'L')
+  Omega <- as.matrix(Omega)
+  return(Omega)
+}
+
+#' Datagen helper.
+#'
+#' The spec consists of everything but the random effects and outcome.
+#' Specifically, the spec should be a list (params, meta, data).
+#' Params should contain the beta, gamma, eta, Omega, betaGamma_random_cor_L matrices.
+#' Meta should contain all dimensions (e.g., n, K, N, P_l1, etc), the group_map, outcome name, and formula.
+#' This is used for both this function, and dataframe converters, to fill in variable names.
+#' Data should contain fixed design matrices and other stan data. \code{.datagen} is responsible for generating RE_z,RE,group-specific, and y.
+#'
+#' @param spec List containing params, meta, and data. See details.
+#'
+#' @return Completed datagen list, containing params, meta, and data.
+#'
+#' @keywords internal
+.datagen <- function(spec){
+
+  # Generate REs
+  betaGamma_random_z <- mvtnorm::rmvnorm(spec$meta$K,sigma=diag(1,spec$meta$P_l1 + spec$meta$Q_l1,spec$meta$P_l1 + spec$meta$Q_l1))
+  betaGamma_random <- matrix(0,nrow(betaGamma_random_z),ncol(betaGamma_random_z))
+  betaGamma_random_sigma <- exp(spec$data$x_bet_l2 %*% spec$params$eta)
+  for(i in 1:spec$meta$K){
+    betaGamma_random[i,] <- betaGamma_random_z[i,]%*%t(diag(betaGamma_random_sigma[i,],length(betaGamma_random_sigma[i,]),length(betaGamma_random_sigma[i,])) %*% spec$params$betaGamma_random_cor_L)
+  }
+
+  # Generate group-specific
+  betaGamma_group <- cbind(spec$data$x_loc_l2 %*% spec$params$beta, spec$data$x_sca_l2 %*% spec$params$gamma) + betaGamma_random
+  beta_group <- betaGamma_group[,1:spec$meta$Q_l1,drop=FALSE]
+  gamma_group <- betaGamma_group[,(spec$meta$Q_l1 + 1):ncol(betaGamma_group),drop=FALSE]
+
+  # Generate outcome
+  yhat <- rowSums(spec$data$x_loc_l1 * beta_group[spec$data$group,,drop=FALSE])
+  shat <- exp(rowSums(spec$data$x_sca_l1 * gamma_group[spec$data$group,,drop=FALSE]))
+  y <- yhat + rnorm(spec$meta$N,0,shat)
+  icc <- betaGamma_random_sigma[,1]^2 / (betaGamma_random_sigma[,1]^2 + shat^2)
+
+  spec$params$betaGamma_random_z <- betaGamma_random_z
+  spec$params$betaGamma_random <- betaGamma_random
+  spec$params$betaGamma_random_sigma <- betaGamma_random_sigma
+  spec$params$beta_group <- beta_group
+  spec$params$gamma_group <- gamma_group
+  spec$data$y <- y
+  spec$params$icc <- icc
+
+  class(spec) <- 'ICCier_datagen'
+
+  return(spec)
+
+}
+
+#' Generate data for testing. (Deprecated)
+#'
+#' Generates data for use in testing. (Deprecated: Use datagen.formula() instead.)
 #'
 #' @param n Number of observations per person.
 #' @param K  Number of persons.
@@ -75,7 +209,7 @@ datagen <- function(n,K,beta,gamma,eta,cor_structure){
 
 }
 
-#' Generate data frame for testing.
+#' Generate data frame for testing. (Deprecated)
 #'
 #' Uses same as \code{\link{datagen}}, but outputs a data frame.
 #'
@@ -95,6 +229,12 @@ generate_df <- function(n,K,beta,gamma,eta,cor_structure){
   return(ds)
 }
 
+#' Convert datagen to data frame. (Deprecated)
+#'
+#' @param d datagen output.
+#'
+#' @return data.frame.
+#' @keywords internal
 convert_datagen <- function(d){
   ds <- data.frame(y=d$data$y,group=d$data$group)
   if(d$meta$P_random > 1){
@@ -110,4 +250,28 @@ convert_datagen <- function(d){
     ds[,paste0('loc_l2.',1:(d$meta$Q - 1))] <- d$data$x_loc_l2[d$data$group,2:d$meta$Q]
   }
   return(ds)
+}
+
+#' Convert datagen to data.frame
+#'
+#' @param d datagen output.
+#'
+#' @return data.frame.
+#' @keywords internal
+as.data.frame.ICCier_datagen <- function(d){
+  ds <- data.frame(y=d$data$y,group=d$data$group)
+  colnames(ds) <- c(d$meta$outcome,colnames(d$meta$group_map$group_L1)[1])
+
+  names_l1 <- list(x_sca_l1=colnames(d$data$x_sca_l1),x_loc_l1=colnames(d$data$x_loc_l1))
+  names_l2 <- list(x_sca_l2=colnames(d$data$x_sca_l2),x_loc_l2=colnames(d$data$x_loc_l2),x_bet_l2=colnames(d$data$x_bet_l2))
+
+  ds[,names_l1[['x_sca_l1']]] <- d$data$x_sca_l1
+  ds[,names_l1[['x_loc_l1']]] <- d$data$x_loc_l1
+  ds[,names_l2[['x_sca_l2']]] <- d$data$x_sca_l2[d$data$group,]
+  ds[,names_l2[['x_loc_l2']]] <- d$data$x_loc_l2[d$data$group,]
+  ds[,names_l2[['x_bet_l2']]] <- d$data$x_bet_l2[d$data$group,]
+  ds[names(ds) == '(Intercept)'] <- NULL
+
+  return(ds)
+
 }
