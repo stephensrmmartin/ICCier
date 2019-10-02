@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_data.R
 \name{datagen}
 \alias{datagen}
-\title{Generate data for testing.}
+\title{Generate data for testing. (Deprecated)}
 \usage{
 datagen(n, K, beta, gamma, eta, cor_structure)
 }
@@ -23,6 +23,6 @@ datagen(n, K, beta, gamma, eta, cor_structure)
 ...
 }
 \description{
-Generates data for use in testing.
+Generates data for use in testing. (Deprecated: Use datagen.formula() instead.)
 }
 \keyword{internal}
