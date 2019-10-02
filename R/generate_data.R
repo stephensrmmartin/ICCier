@@ -14,7 +14,8 @@
 #' @return ICCier_dataget object. List of params, meta, and data.
 #' @import Formula
 #' @keywords internal
-datagen.formula <- function(formula,n,K,beta,gamma,eta,cor_structure,...){
+datagen.formula <- function(formula,n=NA,K=NA,beta,gamma,eta,cor_structure,...){
+  dots <- list(...)
   N <- n*K
   formula <- as.Formula(formula)
   Q_l1 <- ncol(beta)
@@ -29,36 +30,49 @@ datagen.formula <- function(formula,n,K,beta,gamma,eta,cor_structure,...){
   L2 <- all.vars(formula(formula,lhs=0,rhs=c(2,3,5)))
   L1 <- all.vars(formula(formula,lhs=0,rhs=c(1,4)))
 
-  # Create L2 model frame
-  x_l2 <- data.frame(group = 1:K)
-  colnames(x_l2)[1] <- group
-  if(length(L2) > 0){
-    x_l2[,L2] <- mvtnorm::rmvnorm(K,sigma=diag(1,length(L2)))
+  # Branch: If data is supplied, use that to create model matrices.
+  if(!is.null(dots$data)){
+    ds <- dots$data
+    ds[,outcome] <- 1
+    pf <- .parse_formula(formula,ds)
+    data <- pf$stan_data
+    group_map <- pf$group_map
+    N <- nrow(ds)
+    K <- length(unique(ds[,group]))
+  } else {
+    # Create L2 model frame
+    x_l2 <- data.frame(group = 1:K)
+    colnames(x_l2)[1] <- group
+    if(length(L2) > 0){
+      x_l2[,L2] <- mvtnorm::rmvnorm(K,sigma=diag(1,length(L2)))
+    }
+
+    # Create L1 model frame
+    x_l1 <- data.frame(group=rep(1:K,each=n))
+    colnames(x_l1)[1] <- group
+    if(length(L1) > 0){
+      x_l1[,L1] <- mvtnorm::rmvnorm(N,sigma=diag(1,length(L1)))
+    }
+
+    x_sca_l1 <- model.matrix(formula(formula,rhs=1,lhs=0),x_l1)
+    x_sca_l2 <- model.matrix(formula(formula,rhs=2,lhs=0),x_l2)
+    x_bet_l2 <- model.matrix(formula(formula,rhs=3,lhs=0),x_l2)
+    x_loc_l1 <- model.matrix(formula(formula,rhs=4,lhs=0),x_l1)
+    x_loc_l2 <- model.matrix(formula(formula,rhs=5,lhs=0),x_l2)
+
+    group_map <- list(group_L1=model.frame(formula,x_l1,lhs=2,rhs=0),group_L2=model.frame(formula,x_l2,lhs=2,rhs=0))
+    data <- mget(c('x_sca_l1','x_sca_l2','x_bet_l2','x_loc_l1','x_loc_l2','N','n','K','Q_l1','Q_l2','P_l1','P_l2','R_l2'))
+
   }
 
-  # Create L1 model frame
-  x_l1 <- data.frame(group=rep(1:K,each=n))
-  colnames(x_l1)[1] <- group
-  if(length(L1) > 0){
-    x_l1[,L1] <- mvtnorm::rmvnorm(N,sigma=diag(1,length(L1)))
-  }
-
-  x_sca_l1 <- model.matrix(formula(formula,rhs=1,lhs=0),x_l1)
-  x_sca_l2 <- model.matrix(formula(formula,rhs=2,lhs=0),x_l2)
-  x_bet_l2 <- model.matrix(formula(formula,rhs=3,lhs=0),x_l2)
-  x_loc_l1 <- model.matrix(formula(formula,rhs=4,lhs=0),x_l1)
-  x_loc_l2 <- model.matrix(formula(formula,rhs=5,lhs=0),x_l2)
-
-  group_map <- list(group_L1=model.frame(formula,x_l1,lhs=2,rhs=0),group_L2=model.frame(formula,x_l2,lhs=2,rhs=0))
 
   # Package up spec
   params <- list(beta=beta,gamma=gamma,eta=eta,Omega=.omegagen(cor_structure,P_l1,Q_l1),betaGamma_random_cor_L = t(chol(.omegagen(cor_structure,P_l1,Q_l1))))
   meta <- list(n=n,K=K,N=N,Q_l1=Q_l1,P_l1=P_l1,Q_l2=Q_l2,P_l2=P_l2,R_l2=R_l2,group_map=group_map,outcome = outcome,formula=formula)
-  data <- mget(c('x_sca_l1','x_sca_l2','x_bet_l2','x_loc_l1','x_loc_l2','N','n','K','Q_l1','Q_l2','P_l1','P_l2','R_l2'))
   data$group = group_map$group_L1[[1]]
 
   spec <- list(params=params,meta=meta,data=data)
-  .datagen(spec)
+  return(.datagen(spec))
 
 }
 
