@@ -38,60 +38,102 @@ Finally, we end with some best practices and tips for using the `ICCier` package
 
 # Background
 ## Intraclass Correlation Coefficients
-The intraclass correlation coefficient (ICC) is the proportion of total variance that is due to between-group variance.
+The intraclass correlation coefficient (ICC) represents the proportion of variance that is due to between-group variance.
 It can also be thought of as a reliability estimate, or the expected correlation between any two scores within the same group.
-In its most basic form, it can be expressed as:
+There are several ICC variants, and `ICCier` supports many of them.
+The ICC(1) represents the proportion of variability in the *observations* due to the grouping factor.
+The ICC(2) represents the proportion of variability in the *mean score* estimates that is due to true group mean variability.
+The uICC(1) and aICC(1) are conditional ICCs, which are ICCs after controlling for some covariates.
+These are all discussed in turn below.
+
+### ICC(1)
+The ICC(1) can be expressed as:
 $$
 \text{ICC(1)} = \frac{\sigma^2_b}{\sigma^2_b + \sigma^2_{\epsilon}},
 $$
-where $\sigma^2_b$ is the variance between groups, and $\sigma^2_\epsilon$ is the residual variance.
+where $\sigma^2_b$ is the between-group variance, and $\sigma^2_\epsilon$ is the within-group variance.
 
+The ICC(1) is the proportion of total variance in the observations that is due to between-group variance.
 The ICC ranges from 0 to 1, with 0 meaning none of the variance is due to between-group variation, and 1 meaning all is due to between-group variation.
 The *groups* of data may be many things, such as trials within *persons*, persons within *schools*, regions within *countries*, and so on.
 For example, if one has repeated trials within persons, and observes and ICC(1) of .45, then 45\% of the variance in the observations is due to differences between persons.
 
-There are several ICCs, and `ICCier` supports many of them.
-The ICC(1) is specified above, and represents the proportion of variability in the *observations* due to the grouping factor.
-The ICC(2) represents the proportion of variability in the *mean score* estimates that is due to true group mean variability.
-It is specified as:
+The ICC(1) can be interpreted as the proportion of total variance that can be attributed to, and explained by, group-level differences and covariates [E.g., See @Raudenbush2002].
+Therefore, a low ICC(1) indicates that most explainable variance is due to within-group, and not between-group, variables.
+Additionally, the ICC(1) can be interpreted as a reliability measure for individual observations.
+If ICC(1) is high, then most variance in scores is due to between-person differences, rather than within-person fluctuations or measurement error.
+
+`ICCier` extends this so that the between-group variance ($\sigma^2_b$) and the within-group variance ($\sigma^2_\epsilon$) can be modeled.
+Specifically, `ICCier` defines the ICC(1) more generally as:
+
+$$
+\text{ICC(1)}_{ij} = \frac{\hat\sigma^2_{b,i}}{\hat\sigma^2_{b,i} + \hat\sigma^2_{\epsilon,ij}} = \frac{\exp(\boldsymbol{X_i\eta})^2}{\exp(\boldsymbol{X_i\eta})^2 + \exp(\boldsymbol{z_{ij}\gamma_i})^2}
+$$
+Therefore, an ICC(1) can be predicted for each group (i) and each observation therein (j).
+More details about the model implementation are available below ([#model]).
+
+### ICC(2)
+The ICC(2) can be expressed as:
 $$
 \text{ICC(2)} = \frac{\sigma^2_b}{\sigma^2_b + \frac{\sigma^2_\epsilon}{n}},
 $$
 where $n$ is the number of observations within each group.
-The ICC(2) is the same as the ICC(1), except the second variance component is the squared standard error of the mean (i.e., the sampling variance of the mean).
-When $n$ varies across group (i.e., unbalanced groups), it is common to estimate the expected sampling variance by using the average $n_i$ [E.g., See @Raudenbush2002].
+The ICC(2) is the same as the ICC(1), except the second variance component is the approximate sampling variance of the mean (i.e., the squared standard error of the mean).
+When $n$ varies across groups (i.e., unbalanced groups), it is common to estimate the expected sampling variance by using the average $n_i$ [E.g., See @Raudenbush2002].
+
+The ICC(2) is the proportion of variance in group mean estimates that is due to true between-group variance.
+Therefore, the ICC(2) is a reliability measure for group mean estimates.
+If ICC(2) is high, then most variance in group mean estimates is due to true group differences, rather than sampling error.
+
+`ICCier` extends this similarly to the ICC(1) above.
+$$
+\text{ICC(1)}_{ij} = \frac{\hat\sigma^2_{b,i}}{\hat\sigma^2_{b,i} + \hat\sigma^2_{\epsilon,ij}} = \frac{\exp(\boldsymbol{X_i\eta})^2}{\exp(\boldsymbol{X_i\eta})^2 + \frac{\exp(\boldsymbol{z_{ij}\gamma_i})^2}{n_{ij}}}
+$$
+The $n_{ij}$ can either be the number of observations within the group ($n_{ij} = n_i$), or the number of observations up until the $j$-th observation.
+The former provides the predicted ICC(2) at the given covariates assuming the same number of observations are made.
+However, the latter allows researchers to examine how mean reliability changes across the number of observations.
+For example, the trial number can predict variance components, and also be used as $n_{ij}$.
+By doing so, the experimenter can estimate how mean score reliability changes over the course of the experiment.
+
+### uICC(1)
 
 Thus far, we have only described the *unconditional* ICC.
-Unconditional ICCs describe the proportion of variance due to group-varying *means*.
-In unconditional ICCs, $\sigma^2_b$ describes the variance of group means, and $\sigma^2_\epsilon$ is the within-group variance.
-Conditional ICCs include a model on the expected values of the outcome.
-That is, $\sigma^2_\epsilon$ is no longer the within-group variance, but the *residual variance* after accounting for the linear predictors.
-
+Unconditional ICCs are called "unconditional" because the means are not conditioned on any covariates.
+Therefore, the between-group variance is the variance in unconditional means, and the within-group variance is the variance around each group mean.
+In contrast, *conditional* ICCs estimate the variance in *conditional* means, and the residual variance is the variance around the *conditional* mean.
+That is, conditional ICCs include a model on the expected values of the outcome.
+Therefore, $\sigma^2_\epsilon$ is no longer the within-group variance, but the *residual variance* after accounting for the linear predictors.
 Moreover, the $\sigma^2_b$ is ill-defined for conditional ICCs, because there is no longer a simple mean estimate for each group.
+
 There are two broad approaches for the $\sigma^2_b$ in conditional ICCs.
-One, which we call *unadjusted* (and is default in `ICCier`), replaces $\sigma^2_b$ with $\sigma^2_{u_0i}$, the variance of the *intercept*.
-The corresponding ICC, labeled uICC(1), then represents the proportion of variance (after controlling for the predictors) due to groups, assuming the predictors are all at zero.
-If one is interested in the ICC or reliability of conditional group means (i.e., the group means when the predictors are zero), then this is the conditional ICC of interest.
+One, which we call *unadjusted* (default in `ICCier`) replaces the between-group variance of the means ($\sigma^2_b$) with the between-group variance in the intercept ($\sigma^2_{u_{0i}}$).
+The corresponding ICC, labeled uICC(1), can be expressed as:
+$$
+\text{uICC(1)}_{ij} = \frac{\hat\sigma^2_{u_0,i}}{\hat\sigma^2_{u_0,i} + \hat\sigma^2_{\epsilon,ij}} = \frac{\exp(\boldsymbol{X_i\eta_1})^2}{\exp(\boldsymbol{X_i\eta_1})^2 + \exp(\boldsymbol{z_{ij}\gamma_i})^2}
+$$
 
-The second, which we call *adjusted* (and is used when `adjusted = TRUE`), replaces $\sigma^2_b$ with $\sigma^2_{\hat u_{ij}}$, the variance due to *all random coefficients*.
+The uICC(1) represents the proportion of variance (after controlling for the predictors) due to groups, assuming the predictors are all at zero.
+If one is interested in the ICC when predictor variables are at zero, then this is the conditional ICC of interest.
+
+### aICC(1)
+The second conditional ICC which we call *adjusted* (`adjusted = TRUE`) replaces the between-group variance of the means ($\sigma^2_b$) with the between-group variance of the conditional means ($\sigma^2_{\hat u_{ij}}$).
+Whereas the unadjusted ICC only includes the variance between intercepts, the adjusted ICC includes all variance due to between-group differences in the intercepts and slopes.
 That is, $\hat u_{ij} = u_{0i} + x_{ij}u_{1i} + \ldots$, and $\sigma^2_b = \text{Var}(\hat u_{ij})$.
-By comparison, the *unadjusted* conditional ICC merely uses $\sigma^2_b = \text{Var}(u_{0i})$.
-This means that the aICC(1) represents the proportion of total residual variance that is due to group-specific variation, as a whole.
-Alternatively stated, it represents the proportion of variance that is *predicted* by random effects.
-If one is interested in individual differences (i.e., in intercepts and slopes), then this is the conditional ICC of interest.
-
+The aICC(1) can be expressed as:
+$$
+\text{aICC(1)}_{ij} = \frac{\hat\sigma^2_{\hat u,ij}}{\hat\sigma^2_{\hat u,ij} + \hat\sigma^2_{\epsilon,ij}} = \frac{\boldsymbol{m_{ij}\Sigma_i^{(L)}m_{ij}'}}{\boldsymbol{m_{ij}\Sigma_i^{(L)}m_{ij}'} + \exp(\boldsymbol{z_{ij}\gamma_i)^2}}
+$$
+, where $\boldsymbol{m_{ij}}$ is a row of conditional mean predictors for group $i$ on occasion $j$, and $\Sigma_i^{(L)}$ is the group-specific covariance matrix of mean coefficient random effects.
+Further details are available in the model description section ([#model]).
 When no random slopes are present, adjusted and unadjusted ICCs are equivalent.
-The ICC(1) and ICC(2) can be estimated for unconditional models, and for *unadjusted* conditional models.
 
-In sum, `ICCier` can handle unconditional and conditional ICCs with single grouping factors.
-These include the ICC(1), ICC(2), uICC(1), uICC(2), and aICC(1).
-This alone is not novel --- various packages permit the estimation of these ICCs.
-`ICCier`, however, can estimate these quantities *per* group, and predict them *per* observation.
-Consequently, `ICCier` can be used to probe sources of reliability.
+The aICC(1) represents the proportion of total residual variance that is due to group-specific variation, as a whole.
+Alternatively stated, it represents the proportion of variance that is *predicted* by all random effects.
+If one is interested in individual differences (i.e., in intercepts and slopes), then this is the conditional ICC of interest.
 
 ## Group and observation-specific ICCs
 
-# The Underlying Model
+# The Underlying Model {#model}
 This section details the model as implemented in the \texttt{ICCier} package.
 Let $y_{ij}$ be the $j$th observation in the $i$th group response vector $\Vector{y}_i$.
 Because we are using an unconditional one-way model, the expected response for any $y_{ij}$ is $\mu_i = \beta_0 + u_{0i}$.
