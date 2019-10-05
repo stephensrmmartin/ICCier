@@ -118,7 +118,7 @@ If one is interested in the ICC when predictor variables are at zero, then this 
 ### aICC(1)
 The second conditional ICC which we call *adjusted* (`adjusted = TRUE`) replaces the between-group variance of the means ($\sigma^2_b$) with the between-group variance of the conditional means ($\sigma^2_{\hat u_{ij}}$).
 Whereas the unadjusted ICC only includes the variance between intercepts, the adjusted ICC includes all variance due to between-group differences in the intercepts and slopes.
-That is, $\hat u_{ij} = u_{0i} + x_{ij}u_{1i} + \ldots$, and $\sigma^2_b = \text{Var}(\hat u_{ij})$.
+That is, if $\hat u_{ij} = u_{0i} + x_{ij}u_{1i} + \ldots$, then $\sigma^2_{b,i} = \text{Var}(\hat u_{ij})$.
 The aICC(1) can be expressed as:
 $$
 \text{aICC(1)}_{ij} = \frac{\hat\sigma^2_{\hat u,ij}}{\hat\sigma^2_{\hat u,ij} + \hat\sigma^2_{\epsilon,ij}} = \frac{\boldsymbol{m_{ij}\Sigma_i^{(L)}m_{ij}'}}{\boldsymbol{m_{ij}\Sigma_i^{(L)}m_{ij}'} + \exp(\boldsymbol{z_{ij}\gamma_i)^2}}

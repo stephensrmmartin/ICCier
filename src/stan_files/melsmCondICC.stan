@@ -7,6 +7,8 @@ functions {
     return(ICC);
   }
   // doi: 10.1111/2041-210X.12225; but with predicted sigma_l instead.
+  // TODO: Revisit this. May need to compute average x*S*x' for each /k/.
+  // Requires finding all x entries for k, combining into one frame, then computing average.
   vector ICC_adjusted(int[] group, matrix x_loc_l1, matrix Omega, matrix mu_gamma_group_random_sd, vector sigma){
     int N = rows(sigma);
     int K = rows(mu_gamma_group_random_sd);
