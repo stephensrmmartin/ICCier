@@ -31,6 +31,36 @@ functions {
     ICC_adjusted = (numerator) ./ (numerator + (sigma .* sigma));
     return(ICC_adjusted);
   }
+  vector ICC_adjusted_v2(int[] group, matrix x_loc_l1, matrix Omega, matrix mu_gamma_group_random_sd, vector sigma){
+    int N = rows(sigma);
+    int K = rows(mu_gamma_group_random_sd);
+    int dim = rows(Omega);
+    int Q_l1 = cols(x_loc_l1);
+    int n_K[K] = rep_array(0,K);
+    vector[N] numerator;
+    vector[N] ICC_adjusted_out;
+    for(n in 1:N){ // Count number of observations for each K.
+      n_K[group[n]] += 1;
+    }
+    for(k in 1:K){
+      int rows_K[n_K[k]]; // Rows indices for k
+      int count = 1;
+      real numerator_K;
+      matrix[dim,dim] cov_K = quad_form_diag(Omega,mu_gamma_group_random_sd[k]);
+      for(n in 1:N){
+        if(group[n] == k){
+          rows_K[count] = n;
+          count += 1;
+        }
+      }
+      //numerator_K = trace(x_loc_l1[rows_K,] * cov_K[1:Q_l1,1:Q_l1] * x_loc_l1[rows_K,]')/n_K[k];
+      numerator_K = trace_quad_form(cov_K[1:Q_l1,1:Q_l1],x_loc_l1[rows_K,]')/n_K[k];
+      numerator[rows_K] = rep_vector(numerator_K, n_K[k]);
+    }
+    ICC_adjusted_out = (numerator) ./ (numerator + sigma .* sigma);
+    return(ICC_adjusted_out);
+
+  }
 }
 data {
   int N;
@@ -100,7 +130,8 @@ model {
 generated quantities {
 //  vector[N] icc; = ICC(mu_gamma_group_random_sd[group,1], shat);
   corr_matrix[P_l1 + Q_l1] Omega = multiply_lower_tri_self_transpose(mu_gamma_group_random_cor_L);
-  vector[N] icc = adjust_icc ? ICC_adjusted(group, x_loc_l1, Omega, mu_gamma_group_random_sd, shat) : ICC(mu_gamma_group_random_sd[group,1], shat);
+  // vector[N] icc = adjust_icc ? ICC_adjusted(group, x_loc_l1, Omega, mu_gamma_group_random_sd, shat) : ICC(mu_gamma_group_random_sd[group,1], shat);
+  vector[N] icc = adjust_icc ? ICC_adjusted_v2(group, x_loc_l1, Omega, mu_gamma_group_random_sd, shat) : ICC(mu_gamma_group_random_sd[group,1], shat);
   vector[N] log_lik;
   real icc_mean = mean(icc);
   real icc_sd = sd(icc);
