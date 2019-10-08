@@ -121,10 +121,10 @@ Whereas the unadjusted ICC only includes the variance between intercepts, the ad
 That is, if $\hat u_{ij} = u_{0i} + x_{ij}u_{1i} + \ldots$, then $\sigma^2_{b,i} = \text{Var}(\hat u_{ij})$.
 The aICC(1) can be expressed as:
 $$
-\text{aICC(1)}_{ij} = \frac{\hat\sigma^2_{\hat u,ij}}{\hat\sigma^2_{\hat u,ij} + \hat\sigma^2_{\epsilon,ij}} = \frac{\boldsymbol{m_{ij}\Sigma_i^{(L)}m_{ij}'}}{\boldsymbol{m_{ij}\Sigma_i^{(L)}m_{ij}'} + \exp(\boldsymbol{z_{ij}\gamma_i)^2}}
+\text{aICC(1)}_{ij} = \frac{\hat\sigma^2_{\hat u,i}}{\hat\sigma^2_{\hat u,i} + \hat\sigma^2_{\epsilon,ij}} = \frac{\boldsymbol{\mathrm{Tr}(m_{i}\Sigma_i^{(L)}m_{i}')}}{\mathrm{Tr}(\boldsymbol{m_{i}\Sigma_i^{(L)}m_{i}'}) + n_i\exp(\boldsymbol{z_{ij}\gamma_i)^2}}
 $$
-, where $\boldsymbol{m_{ij}}$ is a row of conditional mean predictors for group $i$ on occasion $j$, and $\Sigma_i^{(L)}$ is the group-specific covariance matrix of mean coefficient random effects.
-Further details are available in the model description section ([#model]).
+, where $\boldsymbol{m_{i}}$ is a matrix of conditional mean predictors for group $i$, and $\Sigma_i^{(L)}$ is the group-specific covariance matrix of mean coefficient random effects.
+Further details are available in the [model description](#model) section [See also @R2_slopes].
 When no random slopes are present, adjusted and unadjusted ICCs are equivalent.
 
 The aICC(1) represents the proportion of total residual variance that is due to group-specific variation, as a whole.
