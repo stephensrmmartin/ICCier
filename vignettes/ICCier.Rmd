@@ -193,6 +193,16 @@ We set the parameter to one, implying a uniform prior over correlation matrices 
 # Function Overview
 
 ## `ICCier`
+
+`ICCier` is the model-fitting function.
+It has two interfaces for specifying the model --- a multiple formula and a single-formula interface.
+Because most users will find the multiple-formula interface more intuitive, this vignette focuses only on it.
+The ICC consists of the between-group variance(s) and residual variance.
+`ICCier` imposes models on both components.
+
+The between-group variance model is specified using a formula with `between` on the left-hand side and the predictors on the right.
+This model should consist of group-level variables (e.g., age, sex).
+
 ## `summary`
 ## `predict` and `fitted`
 ## `ranef` and `coef`
