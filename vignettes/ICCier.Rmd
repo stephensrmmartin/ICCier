@@ -18,27 +18,68 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width=6,fig.height=4,
-  message=FALSE,
-  error=FALSE,
-  warning=FALSE
+  fig.width = 6, fig.height = 4,
+  message = FALSE,
+  error = FALSE,
+  warning = FALSE
 )
 ```
 
 # Introduction
-`ICCier` is a package for estimating and predicting group-specific or observation-specific intraclass correlation coefficients (ICCs).
-In this vignette, we describe the rationale for specific ICCs, and walk the reader through the package with various examples.
-First, we provide some background on ICCs and their variety of forms.
-In this section, we introduce the reader to the notation used throughout the rest of the vignette.
-Second, we describe the rationale for varying ICCs (e.g., group-specific ICCs).
+Researchers often employ grouped, hierarchical, or repeated measures designs when measuring the construct of interest.
+Knowing that groups and persons vary, researchers may wish to express the proportion of variance in the measured construct that is due to the grouping variables.
+One such measure is the intraclass correlation coefficient (ICC).
+
+Although the ICC can take many forms, it broadly represents the proportion of some variance due to underlying group variation.
+Consequently, the ICC can help answer many pertinent statistical questions.
+In multilevel models, it can indicate how much variance could be explained by group-level variables in hierarchical models [@Raudenbush2002].
+In psychometrics, it can represent reliability in repeatedly measured constructs [@ShiehG2016].
+In individual-difference research, it can represent the proportion of predictive variance due to between-person model variation [@R2_slopes].
+
+To compute the ICC, the variance components of interest must be estimated.
+For example, the ICC(1) is composed of the between-group variance and within-group variance: 
+$$
+\text{ICC(1)} = \frac{\sigma^2_b}{\sigma^2_b + \sigma^2_\epsilon}
+$$
+A one-way mixed effects model [@Raudenbush2002] can estimate the corresponding variance components.
+These estimates are simply plugged into the equation to produce the estimated ICC(1).
+
+However, this approach makes the strong assumption that the variance components are homogenous across groups and possible covariates.
+Namely, it assumes the residual variance is equal across all groups.
+This assumption is needlessly restrictive, and threatens the generalizability of estimated ICCs.
+
+To relax the homogeneity assumption, the mixed effects location scale model [MELSM; @Rast2012a; @Hedeker2008; @Hedeker2012; @Li2012] can be used.
+The MELSM extends the mixed effects model to include random effects models on variance components.
+For example, a one-way mixed effects model includes randomly varying intercepts, but a single fixed residual variance.
+By contrast, the MELSM one-way mixed effects model includes both randomly varying intercepts, and randomly varying residual variances.
+
+The MELSM does not only loosen the homogeneity assumption, but can explicitly model each variance component.
+In the context of the ICC, the MELSM allows one to predict both $\sigma^2_b$ and $\sigma^2_\epsilon$.
+Therefore, the ICC(1) can be modeled and predicted from covariates:
+$$
+\text{ICC(1)}_{ij} = \frac{\hat\sigma^2_{b,i}}{\hat\sigma^2_{b,i} + \hat\sigma^2_{\epsilon,ij}} = \frac{\exp(\boldsymbol{X}_i\boldsymbol{\eta})^2}{\exp(\boldsymbol{X}_i\boldsymbol{\eta})^2 + \exp(\boldsymbol{z}_{ij}\boldsymbol{\gamma}_{i})^2}
+$$
+
+This approach therefore allows researchers to model and predict the ICC, and with it access to new questions and design considerations.
+For example, researchers can examine which conditions, sampling paradigm, demographics, or number of trials produce the greatest or least reliability.
+Therefore, the researcher can plan future studies more efficiently.
+One may examine the extent to which ICCs vary across groups, and therefore whether reliability is equivalent across multiple groups.
+As this approach is relatively recent [@Hedeker2008; @Brunton-Smith2017; @Williams2019], we are excited to see how researchers employ it.
+
+To this end, we developed `ICCier`.
+`ICCier` is a user-friendly package for estimating and predicting ICCs using the MELSM.
+<!-- `ICCier` is a package for estimating and predicting group-specific or observation-specific intraclass correlation coefficients (ICCs). -->
+<!-- In this vignette, we describe the rationale for specific ICCs, and walk the reader through the package with various examples. -->
+In this vignette, we walk the reader through the package using various examples, and provide further descriptions about the supported ICCs and the underlying model.
+First, we provide background on the supported ICCs.
+Second, we walk through the `ICCier` functions through numerous examples.
 Third, we describe the Bayesian mixed effects location scale model (MELSM) that underlies the estimation of these ICCs.
-The MELSM is the "engine" that makes varying ICCs possible, and we encourage all readers to read this section to best understand the model output.
-Fourth, we walk through the `ICCier` functions, followed by numerous examples for a variety of scenarios.
 Finally, we end with some best practices and tips for using the `ICCier` package.
 
-# Background
-## Intraclass Correlation Coefficients
+# Intraclass Correlation Coefficients #
 The intraclass correlation coefficient (ICC) represents the proportion of variance that is due to between-group variance.
+The ICC ranges from 0 to 1, with 0 meaning none of the variance is due to between-group variation, and 1 meaning all is due to between-group variation.
+The *groups* of data may be many things, such as trials within *persons*, persons within *schools*, regions within *countries*, and so on.
 It can also be thought of as a reliability estimate, or the expected correlation between any two scores within the same group.
 There are several ICC variants, and `ICCier` supports many of them.
 The ICC(1) represents the proportion of variability in the *observations* due to the grouping factor.
@@ -46,7 +87,7 @@ The ICC(2) represents the proportion of variability in the *mean score* estimate
 The uICC(1) and aICC(1) are conditional ICCs, which are ICCs after controlling for some covariates.
 These are all discussed in turn below.
 
-### ICC(1)
+## ICC(1)
 The ICC(1) can be expressed as:
 $$
 \text{ICC(1)} = \frac{\sigma^2_b}{\sigma^2_b + \sigma^2_{\epsilon}},
@@ -54,10 +95,7 @@ $$
 where $\sigma^2_b$ is the between-group variance, and $\sigma^2_\epsilon$ is the within-group variance.
 
 The ICC(1) is the proportion of total variance in the observations that is due to between-group variance.
-The ICC ranges from 0 to 1, with 0 meaning none of the variance is due to between-group variation, and 1 meaning all is due to between-group variation.
-The *groups* of data may be many things, such as trials within *persons*, persons within *schools*, regions within *countries*, and so on.
 For example, if one has repeated trials within persons, and observes and ICC(1) of .45, then 45\% of the variance in the observations is due to differences between persons.
-
 The ICC(1) can be interpreted as the proportion of total variance that can be attributed to, and explained by, group-level differences and covariates [E.g., See @Raudenbush2002].
 Therefore, a low ICC(1) indicates that most explainable variance is due to within-group, and not between-group, variables.
 Additionally, the ICC(1) can be interpreted as a reliability measure for individual observations.
@@ -72,7 +110,7 @@ $$
 Therefore, an ICC(1) can be predicted for each group (i) and each observation therein (j).
 More details about the model implementation are available below ([#model]).
 
-### ICC(2)
+## ICC(2)
 The ICC(2) can be expressed as:
 $$
 \text{ICC(2)} = \frac{\sigma^2_b}{\sigma^2_b + \frac{\sigma^2_\epsilon}{n}},
@@ -95,7 +133,7 @@ However, the latter allows researchers to examine how mean reliability changes a
 For example, the trial number can predict variance components, and also be used as $n_{ij}$.
 By doing so, the experimenter can estimate how mean score reliability changes over the course of the experiment.
 
-### uICC(1)
+## uICC(1)
 
 Thus far, we have only described the *unconditional* ICC.
 Unconditional ICCs are called "unconditional" because the means are not conditioned on any covariates.
@@ -115,7 +153,7 @@ $$
 The uICC(1) represents the proportion of variance (after controlling for the predictors) due to groups, assuming the predictors are all at zero.
 If one is interested in the ICC when predictor variables are at zero, then this is the conditional ICC of interest.
 
-### aICC(1)
+## aICC(1)
 The second conditional ICC which we call *adjusted* (`adjusted = TRUE`) replaces the between-group variance of the means ($\sigma^2_b$) with the between-group variance of the conditional means ($\sigma^2_{\hat u_{ij}}$).
 Whereas the unadjusted ICC only includes the variance between intercepts, the adjusted ICC includes all variance due to between-group differences in the intercepts and slopes.
 That is, if $\hat u_{ij} = u_{0i} + x_{ij}u_{1i} + \ldots$, then $\sigma^2_{b,i} = \text{Var}(\hat u_{ij})$.
@@ -131,20 +169,40 @@ The aICC(1) represents the proportion of total residual variance that is due to 
 Alternatively stated, it represents the proportion of variance that is *predicted* by all random effects.
 If one is interested in individual differences (i.e., in intercepts and slopes), then this is the conditional ICC of interest.
 
-## Group and observation-specific ICCs
-
 # The Underlying Model {#model}
 This section details the model implemented by the `ICCier` package.
+The ICC requires a between-group variance and a within-group variance.
+The mixed-effect location scale model (MELSM) is used to model these components.
+The MELSM employed by `ICCier` has three submodels.
+
+The first submodel is the mean model.
+The mean model is a maximal multilevel (i.e., hierarchical, mixed-effects) model for the mean given the within-group and between-group predictors.
+It is "maximal" because all within-group predictors have random coefficients that covary.
+When an unconditional ICC is estimated, the mean submodel is an intercept-only model, with group-varying means.
+
+The second submodel is the within-group (residual) variance model.
+Unlike traditional multilevel models, the MELSM does not assume a homogenous residual standard deviation (SD).
+Instead, the expected SD is modeled using a log-linear multilevel model from within-group and between-group predictors.
+At minimum, `ICCier` uses an intercept-only model, with group-varying residual SDs.
+
+Finally, the third submodel is the between-group variance model.
+The between-group random effect SDs are log-linearly modeled from between-group predictors.
+At minimum, `ICCier` uses an intercept-only model, such that each random effect SD is constant.
+
+## Model details ##
+
 Let $y_{ij}$ be the $j$th observation in the $i$th group response vector $\boldsymbol{y}_i$.
-Let $\boldsymbol{m_i}$ represent the observation-level design matrix for the response variable, and $\boldsymbol{M}$ represent a group-level row vector.
+Let $\boldsymbol{m_i}$ represent the observation-level design matrix for the response variable, and $\boldsymbol{M}_i$ represent a group-level row vector.
 The response variable is modeled as follows:
 $$
 \begin{align*}
 	\boldsymbol{y_i} &= \boldsymbol{m}_i\boldsymbol{\beta}_i + \boldsymbol{\epsilon}_i \\
-	\boldsymbol\beta_i' &= \boldsymbol{M}_i\boldsymbol{B} + \boldsymbol{u}_i^{(\mu)}'
+	\boldsymbol\beta_i' &= \boldsymbol{M}_i\boldsymbol{B} + \boldsymbol{u}_i^{(\mu)'}
 \end{align*}
 $$
-When an unconditional model is estimated, the design matrices consist only of a vector of 1s.
+This defines a maximal random effects model, such that all within-group variables have covarying random effects.
+All random coefficients are multivariate-linearly modeled from level-2 variables in the coefficient matrix $\boldsymbol{B}$
+If $q$ level-1 predictors are present, and $Q$ level-2 predictors are present, then $\boldsymbol{B}$ is a $Q\times q$ matrix of coefficients, and $\boldsymbol{u}_i^{(\mu)'}$ is a $q$-length row vector of residual random effects.
 
 The errors are assumed to be normally distributed with a modeled residual standard deviation:
 $$
@@ -152,7 +210,7 @@ $$
 	\epsilon_{ij} &\sim \mathcal{N}(0,\hat\sigma_{\epsilon,ij}) \\
 \end{align*}
 $$
-The standard deviation, $\hat\sigma_{\epsilon,ij}$ is modeled similarly.
+The standard deviation, $\hat\sigma_{\epsilon,ij}$, is modeled similarly to the mean.
 Let $\boldsymbol{z}_i$ represent the observation-level design matrix for the predicted residual SD, and $\boldsymbol{Z}_i$ represent a group-level row vector.
 The residual SD is modeled as follows:
 $$
@@ -161,9 +219,14 @@ $$
 	\boldsymbol{\gamma}_i' &= \boldsymbol{Z}_i\boldsymbol{\Gamma} + \boldsymbol{u}_i^{(\sigma)}
 \end{align*}
 $$
+All level-1 variables have covarying random effects.
+All random coefficients are multivariate-linearly modeled from level-2 variables in the coefficient matrix $\boldsymbol{\Gamma}$.
+If there are $p$ level-1 predictors for the residual SD, and $P$ group-level predictors, then $\boldsymbol{\Gamma}$ is a $P\times p$ matrix of coefficients, and $\boldsymbol{u}_i^{(\sigma)'}$ is a $p$-length row vector of residual random effects.
 
-All random effects ($\boldsymbol{u}_i^{(\mu)},\boldsymbol{u}_i^{(\sigma)}$) are distributed multivariate normal with mean zero.
-However, the covariance matrix depends on the group.
+The random effects of the mean model and residual SD model ($\boldsymbol{u}_i^{(\mu)},\boldsymbol{u}_i^{(\sigma)}$) are distributed multivariate normal with mean zero and a dense covariance matrix.
+However, because between-group SDs are modeled, the covariance matrix depends on the group.
+The between-group random-effect SDs are multivariate log-linearly modeled from a level-2 design matrix ($\boldsymbol{X_i}$) and a matrix of coefficients ($\boldsymbol{\eta}$).
+The estimated between-group SDs are then included into a diagonal scale matrix, and combined with the correlation matrix ($\boldsymbol{\Omega}$) to produce the group-specific covariance matrix from which random effects are distributed.
 $$
 \begin{align*}
 	\begin{bmatrix}
@@ -172,9 +235,33 @@ $$
 	\end{bmatrix} &\sim 
 	\text{MVN}(\boldsymbol{0}, \boldsymbol{\Sigma}_i) \\
 	\boldsymbol{\Sigma_i} &= \boldsymbol{D}_i\boldsymbol{\Omega}\boldsymbol{D}_i \\
-	\text{Diag}(\boldsymbol{D_i})' &= \boldsymbol{X}_i\boldsymbol{\eta}
+	\text{Diag}(\boldsymbol{D_i})' &= \exp{\boldsymbol{X}_i\boldsymbol{\eta}}
 \end{align*}
 $$
+
+Altogether, the model is specified as follows:
+$$
+\begin{align*}
+	\boldsymbol{y}_i &\sim \mathcal{N}(\boldsymbol{\hat\mu_i}, \boldsymbol{\hat\sigma}_i) \\
+	\boldsymbol{\hat\mu}_i &= \boldsymbol{m}_i\boldsymbol{\beta}_i \tag{Mean Model}\\ 
+	\boldsymbol{\beta}_i' &= \boldsymbol{M}_i\boldsymbol{B} + \boldsymbol{u}_i^{(\mu)} \\
+	\log\boldsymbol{\hat\sigma}_i &= \boldsymbol{z}_i\boldsymbol{\gamma}_i \tag{Residual SD Model}\\
+	\boldsymbol{\gamma}_i' &= \boldsymbol{Z}_i\boldsymbol{\Gamma} + \boldsymbol{u}_i^{(\sigma)} \\
+	\begin{bmatrix}
+		\boldsymbol{u}_i^{(\mu)} \\
+		\boldsymbol{u}_i^{(\sigma)} 
+	\end{bmatrix} &= \text{MVN}(\boldsymbol{0}, \boldsymbol{\Sigma}_i) \\
+	\boldsymbol{\Sigma}_i &= \boldsymbol{D}_i\boldsymbol{\Omega}\boldsymbol{D}_i \\
+	\log\text{Diag}(\boldsymbol{D}_i)' &= \boldsymbol{X}_i\boldsymbol{\eta} \tag{Between-group SD Model}
+\end{align*}
+$$
+
+## Relationship to ICC ##
+
+### Unconditional ICC ###
+
+
+## Priors ##
 
 This section details the model as implemented in the \texttt{ICCier} package.
 Let $y_{ij}$ be the $j$th observation in the $i$th group response vector $\Vector{y}_i$.
@@ -310,7 +397,8 @@ Number of MCMC chains to run. By default, four MCMC chains are used.
 
 ## `summary`
 
-The summary
+
+
 
 ## `predict` and `fitted`
 ## `ranef` and `coef`
