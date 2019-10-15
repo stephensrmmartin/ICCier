@@ -48,7 +48,7 @@ However, this approach makes the strong assumption that the variance components 
 Namely, it assumes the residual variance is equal across all groups.
 This assumption is needlessly restrictive, and threatens the generalizability of estimated ICCs.
 
-To relax the homogeneity assumption, the mixed effects location scale model [MELSM; @Rast2012a; @Hedeker2008; @Hedeker2012; @Li2012] can be used.
+To relax the homogeneity assumption, the mixed effects location scale model (MELSM) can be used [@Rast2012a; @Hedeker2008; @Hedeker2012; @Li2012].
 The MELSM extends the mixed effects model to include random effects models on variance components.
 For example, a one-way mixed effects model includes randomly varying intercepts, but a single fixed residual variance.
 By contrast, the MELSM one-way mixed effects model includes both randomly varying intercepts, and randomly varying residual variances.
@@ -147,7 +147,7 @@ There are two broad approaches for the $\sigma^2_b$ in conditional ICCs.
 One, which we call *unadjusted* (default in `ICCier`) replaces the between-group variance of the means ($\sigma^2_b$) with the between-group variance in the intercept ($\sigma^2_{u_{0i}}$).
 The corresponding ICC, labeled uICC(1), can be expressed as:
 $$
-\text{uICC(1)}_{ij} = \frac{\hat\sigma^2_{u_0,i}}{\hat\sigma^2_{u_0,i} + \hat\sigma^2_{\epsilon,ij}} = \frac{\exp(\boldsymbol{X_i\eta_1})^2}{\exp(\boldsymbol{X_i\eta_1})^2 + \exp(\boldsymbol{z_{ij}\gamma_i})^2}
+\text{uICC(1)}_{ij} = \frac{\hat\sigma^2_{u_0,i}}{\hat\sigma^2_{u_0,i} + \hat\sigma^2_{\epsilon,ij}} = \frac{\exp(\boldsymbol{X_i\eta_{\cdot 1}})^2}{\exp(\boldsymbol{X_i\eta_{\cdot 1}})^2 + \exp(\boldsymbol{z_{ij}\gamma_i})^2}
 $$
 
 The uICC(1) represents the proportion of variance (after controlling for the predictors) due to groups, assuming the predictors are all at zero.
@@ -168,6 +168,102 @@ When no random slopes are present, adjusted and unadjusted ICCs are equivalent.
 The aICC(1) represents the proportion of total residual variance that is due to group-specific variation, as a whole.
 Alternatively stated, it represents the proportion of variance that is *predicted* by all random effects.
 If one is interested in individual differences (i.e., in intercepts and slopes), then this is the conditional ICC of interest.
+
+
+# Examples
+## `ICCier`
+
+`ICCier` is the model-fitting function.
+It has two interfaces for specifying the model --- a multiple formula and a single-formula interface.
+This vignette focuses only on the multiple-formula interface, because it is more intuitive.
+With the multiple-formula interface, only three arguments are mandatory:
+
+1. *x*  
+The name of the variable for which the ICC is to be computed.
+2. *group*  
+The name of the grouping variable.
+3. *data*  
+A data.frame containing the measured and grouping variables.
+
+> ## Example
+> `ICCier(x = MathAch, group = School, data = MathAchieve)`
+
+When only these three arguments are provided, `ICCier` estimates one between-group variance, and per-group residual variances.
+
+In order to model between-group variance, another formula is required.
+The formula should include group-level covariates on the right-hand side, with 'between' on the left-hand side, and is specified anywhere after the data argument.
+
+> ## Example
+> `ICCier(MathAch, School, MathAchieve, between ~ MEANSES)`
+
+In this example, the between-group variance can vary across the `MEANSES` variable.
+Consequently, the ICC can be larger or smaller depending on the mean SES of the school.
+
+To model the within-group variance, another formula is required.
+The within-group variance formula has 'within' on the LHS, and covariates on the RHS.
+The RHS formula is partitioned into two formulas: within-group variables and between-group formulas, separated by a pipe (|).
+Within-group variables are variables whose values vary within groups (i.e., level 1 variables), whereas between-group variables only vary between groups (i.e., level 2 variables).
+
+> ## Example
+> `ICCier(MathAch, School, MathAchieve, within ~ Sex | MEANSES)`
+
+In this example, the residual variance for each observation is modeled from Sex (level 1), MEANSES (level 2), and their interaction (Sex:MEANSES).
+All level 1 variable coefficients are assumed to randomly vary and covary, and are predicted from level 2 variables.
+Consequently, each group is expected to have a different residual variance.
+Moreover, when predicting from within-group variables, an ICC is estimated for each observation.
+To exclude level 1 or level 2 predictors, simply include an intercept term instead.
+E.g., to model within-group variance only from MEANSES:
+
+> ## Example
+> `ICCier(MathAch, School, MathAchieve, within ~ 1 | MEANSES)`
+
+Both between-group and within-group variances can be modeled simultaneously by including both formulas.
+E.g., 
+
+> ## Example
+> `ICCier(MathAch, School, MathAchieve, within ~ Sex + Minority | MEANSES, between ~ MEANSES + Sector)`
+
+In order to estimate conditional ICCs, a mean model must be included.
+The mean model is specified using 'mean' on the LHS, and covariates on the RHS.
+Similar to the within-group variance model, the RHS is split into within-group and between-group predictors.
+
+> ## Example
+> `ICCier(MathAch, School, MathAchieve, mean ~ Sex | Sector)`
+
+In this example, `MathAch` is predicted by Sex (level 1), Sector (Level 2), and their interaction (Sex:Sector).
+For simplicity, no between or within-group variance models were included.
+The within-group variance component is now the residual error variance from the conditional mean model.
+Because `adjusted` was not specified, the between-group variance component is the between-group variance of the intercepts (i.e., variance between groups when Sex and Sector are zero).
+
+Other notable arguments to `ICCier` include:
+* adjusted  
+When estimating conditional ICCs, to use the adjusted ICC (aICC, `TRUE`) or not (uICC, `FALSE`, default).
+* iter  
+Number of MCMC iterations to run (including warmup).
+* cores  
+Number of cores to use. By default, it will use the number of cores available.
+* chains  
+Number of MCMC chains to run. By default, four MCMC chains are used.
+
+## Unconditional, Intercept-only
+
+## Unconditional, Scale Model
+
+## Conditional, Intercept-only
+
+## Conditional, Scale Model
+
+## Level 2 Variables
+
+## Model Comparison
+
+# Best Practices
+
+## Diagnostic Failures and You
+
+## Scaling and Centering
+
+## Pre-Filtering (Self: as in, using complete cases only, so fitted can be combined easily)
 
 # The Underlying Model {#model}
 This section details the model implemented by the `ICCier` package.
@@ -352,112 +448,5 @@ We set the parameter to one, implying a uniform prior over correlation matrices 
 <!-- In our testing of this model, between-group variances in particular may be small or effectively zero, and the wide-tailed priors effectively attenuated any sampling problems. -->
 <!-- The LKJ prior is a spherical prior over correlation matrices that takes a single parameter. -->
 <!-- We set the parameter to one, implying a uniform prior over correlation matrices [@lewandowski2009b]. -->
-
-# Function Overview
-
-## `ICCier`
-
-`ICCier` is the model-fitting function.
-It has two interfaces for specifying the model --- a multiple formula and a single-formula interface.
-This vignette focuses only on the multiple-formula interface, because it is more intuitive.
-With the multiple-formula interface, only three arguments are mandatory:
-
-1. *x*  
-The name of the variable for which the ICC is to be computed.
-2. *group*  
-The name of the grouping variable.
-3. *data*  
-A data.frame containing the measured and grouping variables.
-
-> ## Example
-> `ICCier(x = MathAch, group = School, data = MathAchieve)`
-
-When only these three arguments are provided, `ICCier` estimates one between-group variance, and per-group residual variances.
-
-In order to model between-group variance, another formula is required.
-The formula should include group-level covariates on the right-hand side, with 'between' on the left-hand side, and is specified anywhere after the data argument.
-
-> ## Example
-> `ICCier(MathAch, School, MathAchieve, between ~ MEANSES)`
-
-In this example, the between-group variance can vary across the `MEANSES` variable.
-Consequently, the ICC can be larger or smaller depending on the mean SES of the school.
-
-To model the within-group variance, another formula is required.
-The within-group variance formula has 'within' on the LHS, and covariates on the RHS.
-The RHS formula is partitioned into two formulas: within-group variables and between-group formulas, separated by a pipe (|).
-Within-group variables are variables whose values vary within groups (i.e., level 1 variables), whereas between-group variables only vary between groups (i.e., level 2 variables).
-
-> ## Example
-> `ICCier(MathAch, School, MathAchieve, within ~ Sex | MEANSES)`
-
-In this example, the residual variance for each observation is modeled from Sex (level 1), MEANSES (level 2), and their interaction (Sex:MEANSES).
-All level 1 variable coefficients are assumed to randomly vary and covary, and are predicted from level 2 variables.
-Consequently, each group is expected to have a different residual variance.
-Moreover, when predicting from within-group variables, an ICC is estimated for each observation.
-To exclude level 1 or level 2 predictors, simply include an intercept term instead.
-E.g., to model within-group variance only from MEANSES:
-
-> ## Example
-> `ICCier(MathAch, School, MathAchieve, within ~ 1 | MEANSES)`
-
-Both between-group and within-group variances can be modeled simultaneously by including both formulas.
-E.g., 
-
-> ## Example
-> `ICCier(MathAch, School, MathAchieve, within ~ Sex + Minority | MEANSES, between ~ MEANSES + Sector)`
-
-In order to estimate conditional ICCs, a mean model must be included.
-The mean model is specified using 'mean' on the LHS, and covariates on the RHS.
-Similar to the within-group variance model, the RHS is split into within-group and between-group predictors.
-
-> ## Example
-> `ICCier(MathAch, School, MathAchieve, mean ~ Sex | Sector)`
-
-In this example, `MathAch` is predicted by Sex (level 1), Sector (Level 2), and their interaction (Sex:Sector).
-For simplicity, no between or within-group variance models were included.
-The within-group variance component is now the residual error variance from the conditional mean model.
-Because `adjusted` was not specified, the between-group variance component is the between-group variance of the intercepts (i.e., variance between groups when Sex and Sector are zero).
-
-Other notable arguments to `ICCier` include:
-* adjusted  
-When estimating conditional ICCs, to use the adjusted ICC (aICC, `TRUE`) or not (uICC, `FALSE`, default).
-* iter  
-Number of MCMC iterations to run (including warmup).
-* cores  
-Number of cores to use. By default, it will use the number of cores available.
-* chains  
-Number of MCMC chains to run. By default, four MCMC chains are used.
-
-## `summary`
-
-
-
-
-## `predict` and `fitted`
-## `ranef` and `coef`
-## `loo`
-
-# Examples
-
-## Unconditional, Intercept-only
-
-## Unconditional, Scale Model
-
-## Conditional, Intercept-only
-
-## Conditional, Scale Model
-
-## Level 2 Variables
-
-# Model Comparison
-
-# Best Practices
-
-## Diagnostic Failures and You
-
-## Scaling and Centering
-
-## Pre-Filtering (Self: as in, using complete cases only, so fitted can be combined easily)
 
 # References
